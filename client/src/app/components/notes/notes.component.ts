@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NoteService } from '../../services/note.service'; // Ensure the path is correct
-import { Note } from '../../model/note.model'; // Define Note model separately
+import { NoteService } from '../../services/note.service';
+import { Note } from '../../model/note.model';
 
 @Component({
   selector: 'app-notes',
@@ -17,9 +17,11 @@ export class NotesComponent {
   sortOrder: string = 'latest';
   isModalOpen = false;
   isViewModalOpen = false;
+  isDeleteModalOpen = false;
   isEditing = false;
   editNoteId: number | null = null;
   selectedNote: Note | null = null;
+  noteToDelete: Note | null = null; // Note to confirm deletion
 
   currentNote: Note = this.createEmptyNote();
 
@@ -28,15 +30,15 @@ export class NotesComponent {
   }
 
   loadNotes(): void {
-    this.noteService.getNotesByUser(1).subscribe(
-      (data) => {
+    this.noteService.getNotes().subscribe({
+      next: (data) => {
         this.notes = data;
         this.filteredNotes = [...this.notes];
       },
-      (error) => {
+      error: (error) => {
         console.error('Failed to load notes', error);
-      }
-    );
+      },
+    });
   }
 
   openAddNoteModal(): void {
@@ -47,7 +49,7 @@ export class NotesComponent {
 
   openEditNoteModal(note: Note): void {
     this.isEditing = true;
-    this.editNoteId = note.id;
+    this.editNoteId = note.id ?? null;
     this.currentNote = { ...note };
     this.isModalOpen = true;
   }
@@ -59,6 +61,8 @@ export class NotesComponent {
 
   closeModal(): void {
     this.isModalOpen = false;
+    this.isEditing = false;
+    this.editNoteId = null;
   }
 
   closeViewModal(): void {
@@ -66,31 +70,59 @@ export class NotesComponent {
     this.selectedNote = null;
   }
 
-  saveNote(): void {
-    if (this.isEditing && this.editNoteId !== null) {
-      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe(
-        () => {
-          this.loadNotes();
-          this.closeModal();
-        },
-        (error) => console.error('Failed to update note', error)
-      );
-    } else {
-      this.noteService.createNote(1, this.currentNote).subscribe(
-        () => {
-          this.loadNotes();
-          this.closeModal();
-        },
-        (error) => console.error('Failed to create note', error)
-      );
-    }
+  openDeleteModal(note: Note): void {
+    this.noteToDelete = note;
+    this.isDeleteModalOpen = true;
   }
 
-  deleteNote(id: number): void {
-    this.noteService.deleteNote(id).subscribe(
-      () => this.loadNotes(),
-      (error) => console.error('Failed to delete note', error)
-    );
+  closeDeleteModal(): void {
+    this.isDeleteModalOpen = false;
+    this.noteToDelete = null;
+  }
+  confirmDelete(): void {
+    if (this.noteToDelete && this.noteToDelete.id) {
+      const idToDelete = this.noteToDelete.id;
+      this.noteService.deleteNote(idToDelete).subscribe({
+        next: () => {
+          // Remove the note from the local arrays immediately
+          this.notes = this.notes.filter((note) => note.id !== idToDelete);
+          this.filteredNotes = this.filteredNotes.filter(
+            (note) => note.id !== idToDelete
+          );
+  
+          this.closeDeleteModal();
+        },
+        error: (error) => {
+          console.error('Failed to delete note', error);
+          alert('Failed to delete note: ' + (error.message || 'Unknown error'));
+          this.closeDeleteModal();
+        },
+      });
+    }
+  }
+  
+
+  saveNote(): void {
+    if (this.isEditing && this.editNoteId !== null) {
+      // Update existing note
+      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
+        next: () => {
+          this.loadNotes();
+          this.closeModal();
+        },
+        error: (error) => console.error('Failed to update note', error),
+      });
+    } else {
+      // Create new note
+      const newNote = { ...this.currentNote, id: undefined }; // Remove `id`
+      this.noteService.createNote(newNote).subscribe({
+        next: () => {
+          this.loadNotes();
+          this.closeModal();
+        },
+        error: (error) => console.error('Failed to create note', error),
+      });
+    }
   }
 
   filterNotes(): void {
