@@ -1,0 +1,115 @@
+<div class="modal-backdrop">
+  <div class="modal-container">
+    <h2 class="modal-title">New Note</h2>
+
+    <form class="modal-form">
+      <!-- Title Input -->
+      <label for="title" class="label">Title</label>
+      <input id="title" type="text" class="input" />
+
+      <!-- Task Dropdown -->
+      <label for="task" class="label">Category</label>
+      <select id="task" class="input">
+        <option value="" disabled selected>Select a task</option>
+        <option value="Study">Study</option>
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+      </select>
+
+      <!-- Note Textarea -->
+      <label for="note" class="label">Note</label>
+      <div
+        id="note"
+        class="note-editor"
+        contenteditable="true"
+        [ngStyle]="{ backgroundColor: noteColor }"
+      ></div>
+
+      <!-- Note Toolbar -->
+      <div class="toolbar">
+        <!-- Formatting Buttons -->
+        <button
+          type="button"
+          (click)="applyFormatting('bold')"
+          [ngClass]="{ active: isActive('bold') }"
+        >
+          <b>B</b>
+        </button>
+        <button
+          type="button"
+          (click)="applyFormatting('italic')"
+          [ngClass]="{ active: isActive('italic') }"
+        >
+          <i>I</i>
+        </button>
+        <button
+          type="button"
+          (click)="applyFormatting('underline')"
+          [ngClass]="{ active: isActive('underline') }"
+        >
+          <u>U</u>
+        </button>
+        <button
+          type="button"
+          (click)="applyFormatting('strikethrough')"
+          [ngClass]="{ active: isActive('strikethrough') }"
+        >
+          S
+        </button>
+
+        <!-- Alignment Buttons -->
+        <div class="alignment-buttons">
+          <button
+            type="button"
+            (click)="applyFormatting('justifyLeft')"
+            [ngClass]="{ active: isActive('justifyLeft') }"
+          >
+            Left
+          </button>
+          <button
+            type="button"
+            (click)="applyFormatting('justifyCenter')"
+            [ngClass]="{ active: isActive('justifyCenter') }"
+          >
+            Center
+          </button>
+          <button
+            type="button"
+            (click)="applyFormatting('justifyRight')"
+            [ngClass]="{ active: isActive('justifyRight') }"
+          >
+            Right
+          </button>
+        </div>
+      </div>
+
+      <!-- Color Picker -->
+      <div class="color-chooser">
+        <span class="label">Color</span>
+        <div class="color-options">
+          <div
+            class="color-circle"
+            *ngFor="let color of predefinedColors"
+            [ngStyle]="{ backgroundColor: color }"
+            (click)="setNoteColor(color)"
+          ></div>
+          <!-- Custom Color Picker -->
+          <div class="color-circle">
+            <input
+              type="color"
+              (change)="setNoteColor($event)"
+              class="color-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="button-container">
+        <button type="button" class="button" (click)="saveNote()">
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
