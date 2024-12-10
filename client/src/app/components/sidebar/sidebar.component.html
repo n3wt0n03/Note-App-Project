@@ -6,14 +6,19 @@
   <!-- Profile Section -->
   <div class="flex items-center justify-center py-6">
     <div
-      class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+      class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg select-none cursor-pointer"
+      routerLink="/dashboard/profile"
       *ngIf="!isExpanded"
     >
       JD
     </div>
-    <div *ngIf="isExpanded" class="flex items-center space-x-3">
+    <div
+      *ngIf="isExpanded"
+      class="flex items-center space-x-3"
+      routerLink="/dashboard/profile"
+    >
       <div
-        class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+        class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg cursor-pointer"
       >
         JD
       </div>
@@ -59,25 +64,6 @@
               [class.text-blue-500]="isActive('categories')"
             ></span>
             <span>Categories</span>
-          </div>
-        </button>
-      </li>
-      <li>
-        <button
-          routerLink="/dashboard/profile"
-          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <span
-            class="fas fa-user-circle text-2xl"
-            [class.text-blue-500]="isActive('profile')"
-            *ngIf="!isExpanded"
-          ></span>
-          <div *ngIf="isExpanded" class="flex items-center space-x-4">
-            <span
-              class="fas fa-user-circle text-2xl"
-              [class.text-blue-500]="isActive('profile')"
-            ></span>
-            <span>Profile</span>
           </div>
         </button>
       </li>
