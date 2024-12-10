@@ -1,5 +1,5 @@
 export interface Note {
-    id: number;         // Unique identifier for the note
+    id?: number;         // Unique identifier for the note
     title: string;      // Title of the note
     category: string;   // Category of the note (e.g., Study, Work, Personal)
     description: string; // Detailed description of the note
