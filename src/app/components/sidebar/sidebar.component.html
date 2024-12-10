@@ -1,0 +1,97 @@
+<div
+  class="h-screen flex flex-col bg-white text-gray-800 shadow-lg"
+  [class.w-20]="!isExpanded"
+  [class.w-64]="isExpanded"
+>
+  <!-- Profile Section -->
+  <div class="flex items-center justify-center py-6">
+    <div
+      class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+      *ngIf="!isExpanded"
+    >
+      JD
+    </div>
+    <div *ngIf="isExpanded" class="flex items-center space-x-3">
+      <div
+        class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg"
+      >
+        JD
+      </div>
+      <span class="font-bold text-lg">John Doe</span>
+    </div>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav class="flex-grow mt-6">
+    <ul class="space-y-4">
+      <li>
+        <button
+          routerLink="/dashboard/notes"
+          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <span
+            class="fas fa-home text-2xl"
+            [class.text-blue-500]="isActive('notes')"
+            *ngIf="!isExpanded"
+          ></span>
+          <div *ngIf="isExpanded" class="flex items-center space-x-4">
+            <span
+              class="fas fa-home text-2xl"
+              [class.text-blue-500]="isActive('notes')"
+            ></span>
+            <span>Notes</span>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          routerLink="/dashboard/categories"
+          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <span
+            class="fas fa-th-list text-2xl"
+            [class.text-blue-500]="isActive('categories')"
+            *ngIf="!isExpanded"
+          ></span>
+          <div *ngIf="isExpanded" class="flex items-center space-x-4">
+            <span
+              class="fas fa-th-list text-2xl"
+              [class.text-blue-500]="isActive('categories')"
+            ></span>
+            <span>Categories</span>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          routerLink="/dashboard/profile"
+          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <span
+            class="fas fa-user-circle text-2xl"
+            [class.text-blue-500]="isActive('profile')"
+            *ngIf="!isExpanded"
+          ></span>
+          <div *ngIf="isExpanded" class="flex items-center space-x-4">
+            <span
+              class="fas fa-user-circle text-2xl"
+              [class.text-blue-500]="isActive('profile')"
+            ></span>
+            <span>Profile</span>
+          </div>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Toggle Button -->
+  <div class="p-4 border-t border-gray-200">
+    <button
+      (click)="toggleSidebar()"
+      class="flex items-center justify-center w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+    >
+      <span *ngIf="!isExpanded" class="fas fa-chevron-right"></span>
+      <span *ngIf="isExpanded" class="fas fa-chevron-left"></span>
+    </button>
+  </div>
+</div>
