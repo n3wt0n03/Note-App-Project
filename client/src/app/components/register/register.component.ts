@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { RouterModule } from '@angular/router';
   selector: 'app-register',
   templateUrl: './register.component.html',
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   username: string = '';
   email: string = '';
   password: string = '';
@@ -24,6 +24,26 @@ export class RegisterComponent {
   isSubmitting: boolean = false;
 
   constructor(private authService: AuthService, private router: Router) {}
+
+  ngOnInit() {
+    // Check for saved theme preference
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    this.setDarkMode(isDarkMode);
+  }
+
+  toggleDarkMode() {
+    const isDarkMode = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }
+
+  setDarkMode(isDarkMode: boolean) {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
   onRegister(): void {
     this.usernameError = '';
     this.emailError = '';

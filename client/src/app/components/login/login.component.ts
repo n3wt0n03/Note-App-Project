@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -10,7 +10,7 @@ import { Router, RouterModule } from '@angular/router';
   imports: [RouterModule, CommonModule, FormsModule],
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email: string = '';
   password: string = '';
   message: string = '';
@@ -19,6 +19,25 @@ export class LoginComponent {
   isSubmitting: boolean = false;
 
   constructor(private authService: AuthService, private router: Router) {}
+
+  ngOnInit() {
+    // Check for saved theme preference
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    this.setDarkMode(isDarkMode);
+  }
+
+  toggleDarkMode() {
+    const isDarkMode = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }
+
+  setDarkMode(isDarkMode: boolean) {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }
 
   onLogin(): void {
     // Reset errors
