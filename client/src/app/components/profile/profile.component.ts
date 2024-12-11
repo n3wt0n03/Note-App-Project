@@ -111,6 +111,42 @@ export class ProfileComponent implements OnInit {
     return `${maskedLocal}@${domain}`;
   }
 
+  saveChanges() {
+    if (this.isChangingPassword) {
+      console.log('Change password logic here');
+    } else {
+      const updatedUser: User = {
+        id: this.userId!,
+        username: this.username,
+        email: this.user?.email ?? '', // Keep email unchanged
+        firstName: this.displayName.split(' ')[0],
+        lastName: this.displayName.split(' ')[1],
+        bio: this.bio,
+        phoneNumber: this.phoneNumber,
+        password: '', // Do not include the password
+      };
+      this.userService.updateUserProfile(this.userId!, updatedUser).subscribe(
+        (updated) => {
+          alert('Profile updated successfully');
+          this.user = updated;
+        },
+        (error) => alert('Error updating profile: ' + error.message)
+      );
+      window.location.reload();
+    }
+    this.closeModal();
+  }
+
+  openModal(type: number) {
+    this.isModalOpen = true;
+    this.isChangingPassword = type === 1;
+    this.modalTitle = type === 1 ? 'Change Password' : 'Edit Profile';
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
   toggleEmail(): void {
     if (this.emailDisplay === this.censorEmail(this.rawEmail)) {
       this.emailDisplay = this.rawEmail;
