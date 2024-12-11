@@ -1,32 +1,29 @@
 package edu.usc.noteapp.note_taking_system.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "notes")
+@Table(name = "notes") // This specifies the table name
+
 public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
     private String category;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    private String color; // Add this field
+
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore // Prevent the `user` field from being serialized
     private User user;
 
     // Getters and Setters
@@ -68,6 +65,14 @@ public class Note {
 
     public void setDate(LocalDate date) {
         this.date = date;
+    }
+
+    public String getColor() {
+        return color; // Getter for color
+    }
+
+    public void setColor(String color) {
+        this.color = color; // Setter for color
     }
 
     public User getUser() {

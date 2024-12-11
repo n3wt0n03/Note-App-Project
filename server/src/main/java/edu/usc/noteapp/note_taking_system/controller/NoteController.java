@@ -71,6 +71,7 @@ public class NoteController {
         existingNote.setCategory(updatedNote.getCategory());
         existingNote.setDescription(updatedNote.getDescription());
         existingNote.setDate(updatedNote.getDate());
+        existingNote.setColor(updatedNote.getColor()); // Update color field
 
         // Save the updated note
         Note savedNote = noteService.updateNote(noteId, existingNote);
@@ -86,20 +87,22 @@ public class NoteController {
         Note note = noteService.getNoteById(noteId)
                 .orElseThrow(() -> new RuntimeException("Note not found"));
 
+        // Ensure the authenticated user is the owner of the note
         if (!note.getUser().getEmail().equals(email)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You do not have permission to delete this note.");
+                    .body("{\"error\": \"You do not have permission to delete this note.\"}");
         }
 
         noteService.deleteNoteById(noteId);
-        return ResponseEntity.ok("{\"message\":\"Note deleted successfully.\"}");
+
+        // Return a JSON response for consistency
+        return ResponseEntity.ok("{\"message\": \"Note deleted successfully.\"}");
     }
 
 
     // Helper method to get the authenticated user's email
     private String getAuthenticatedUserEmail() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("Authenticated Email: " + email); // Debugging
         return email;
     }
 }

@@ -34,6 +34,7 @@
   >
     <div
       *ngFor="let note of filteredNotes"
+      [ngStyle]="{ backgroundColor: note.color || '#ffffff' }"
       class="bg-white shadow-md rounded-lg p-4 relative flex flex-col hover:shadow-lg cursor-pointer"
       style="height: 200px"
       (click)="openViewModal(note)"

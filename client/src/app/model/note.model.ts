@@ -4,5 +4,5 @@ export interface Note {
   category: string;    // Category of the note (e.g., Study, Work, Personal)
   description: string; // Detailed description of the note
   date: string;        // Date of the note in ISO format (e.g., YYYY-MM-DD)
-  color?: string;      // Background color of the note (e.g., hex color code)
+  color: string;      // Background color of the note (e.g., hex color code)
 }
