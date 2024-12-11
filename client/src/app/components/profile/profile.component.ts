@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +10,8 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
+  constructor(private router: Router) {}
+
   // Simulated user data fetched from the server
   user = {
     firstName: 'John',
@@ -94,5 +97,18 @@ export class ProfileComponent {
       this.emailDisplay = this.censorEmail(this.rawEmail);
       this.revealButtonText = 'Reveal';
     }
+  }
+
+  // Logout functionality
+  logout(): void {
+    // Clear tokens from storage
+    sessionStorage.clear();
+    localStorage.clear();
+
+    // Log the action for debugging (optional)
+    console.log('User has been logged out. Tokens cleared from storage.');
+
+    // Redirect to login page
+    this.router.navigate(['/login']);
   }
 }
