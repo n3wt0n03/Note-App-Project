@@ -1,17 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http'; // Added HttpClientModule
 import { AuthService } from '../../services/auth.service';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, HttpClientModule], // Added HttpClientModule
+  imports: [RouterModule, CommonModule, FormsModule],
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email: string = '';
   password: string = '';
   message: string = '';
@@ -21,90 +20,81 @@ export class LoginComponent {
 
   constructor(private authService: AuthService, private router: Router) {}
 
-  onLogin(): void {
-    // Reset errors
-    this.resetErrors();
-
-    // Frontend Validation
-    if (!this.validateInputs()) {
-      return;
-    }
-
-    this.isSubmitting = true;
-    const user = { email: this.email, password: this.password };
-
-    this.authService.login(user).subscribe({
-      next: (response: any) => {
-        this.handleSuccessfulLogin(response);
-      },
-      error: (error) => {
-        this.handleLoginError(error);
-      },
-    });
+  ngOnInit() {
+    // Check for saved theme preference
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    this.setDarkMode(isDarkMode);
   }
 
-  private resetErrors(): void {
+  toggleDarkMode() {
+    const isDarkMode = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }
+
+  setDarkMode(isDarkMode: boolean) {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
+  onLogin(): void {
+    // Reset errors
     this.emailError = '';
     this.passwordError = '';
     this.message = '';
-  }
 
-  private validateInputs(): boolean {
-    let isValid = true;
-
+    // Frontend Validation
     if (!this.email) {
       this.emailError = 'Email is required.';
-      isValid = false;
-    } else if (
-      !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/.test(this.email)
-    ) {
+    } else if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/.test(this.email)) {
       this.emailError = 'Invalid email format.';
-      isValid = false;
     }
 
     if (!this.password) {
       this.passwordError = 'Password is required.';
-      isValid = false;
     }
 
-    return isValid;
-  }
-
-  private handleSuccessfulLogin(response: any): void {
-    this.message = 'Login successful!';
-    this.isSubmitting = false;
-
-    // Save token and user data in localStorage
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response));
-
-    // Redirect to dashboard
-    this.router.navigate(['/dashboard']);
-  }
-
-  private handleLoginError(error: any): void {
-    this.isSubmitting = false;
-
-    const backendMessage =
-      error?.error?.message || 'An unknown error occurred.';
-    switch (backendMessage) {
-      case 'Email is required!':
-        this.emailError = 'Email is required.';
-        break;
-      case 'Password is required!':
-        this.passwordError = 'Password is required.';
-        break;
-      case 'Email does not exist!':
-        this.emailError = 'Email does not exist.';
-        break;
-      case 'Invalid password!':
-        this.passwordError = 'Invalid password.';
-        break;
-      default:
-        this.message = backendMessage;
-        break;
+    if (this.emailError || this.passwordError) {
+      return;
     }
 
-    console.error('Login error:', error); // Debugging
+    this.isSubmitting = true;
+
+    const user = { email: this.email, password: this.password };
+
+    this.authService.login(user).subscribe({
+      next: (response: any) => {
+        this.message = 'Login successful!';
+        this.isSubmitting = false;
+
+        // Save token and user data in localStorage
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response));
+
+        // Redirect to dashboard
+        this.router.navigate(['/dashboard']);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+
+        const backendMessage = error?.error?.message;
+
+        if (backendMessage === 'Email is required!') {
+          this.emailError = 'Email is required.';
+        } else if (backendMessage === 'Password is required!') {
+          this.passwordError = 'Password is required.';
+        } else if (backendMessage === 'Email does not exist!') {
+          this.emailError = 'Email does not exist.';
+        } else if (backendMessage === 'Invalid password!') {
+          this.passwordError = 'Invalid password.';
+        } else {
+          this.message = 'An unknown error occurred. Please try again.';
+        }
+
+        console.error('Login error:', error); // Debugging
+      },
+    });
   }
 }
