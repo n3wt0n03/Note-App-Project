@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
+import { ThemeService } from '../../services/theme.service';
 import { Note } from '../../model/note.model';
 
 @Component({
@@ -10,7 +11,7 @@ import { Note } from '../../model/note.model';
   imports: [CommonModule, FormsModule],
   templateUrl: './notes.component.html',
 })
-export class NotesComponent {
+export class NotesComponent implements OnInit {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
   searchTerm: string = '';
@@ -21,13 +22,20 @@ export class NotesComponent {
   isEditing = false;
   editNoteId: number | null = null;
   selectedNote: Note | null = null;
-  noteToDelete: Note | null = null; // Note to confirm deletion
+  noteToDelete: Note | null = null;
 
   currentNote: Note = this.createEmptyNote();
 
-  constructor(private noteService: NoteService) {
+  constructor(private noteService: NoteService, private themeService: ThemeService) {}
+
+  ngOnInit() {
     this.loadNotes();
+    this.themeService.isDarkMode$.subscribe(isDark => {
+      // The setDarkMode method is now handled by the ThemeService
+    });
   }
+
+  // Remove toggleDarkMode and setDarkMode methods as they're now handled by ThemeService
 
   loadNotes(): void {
     this.noteService.getNotes().subscribe({
@@ -79,17 +87,16 @@ export class NotesComponent {
     this.isDeleteModalOpen = false;
     this.noteToDelete = null;
   }
+
   confirmDelete(): void {
     if (this.noteToDelete && this.noteToDelete.id) {
       const idToDelete = this.noteToDelete.id;
       this.noteService.deleteNote(idToDelete).subscribe({
         next: () => {
-          // Remove the note from the local arrays immediately
           this.notes = this.notes.filter((note) => note.id !== idToDelete);
           this.filteredNotes = this.filteredNotes.filter(
             (note) => note.id !== idToDelete
           );
-  
           this.closeDeleteModal();
         },
         error: (error) => {
@@ -100,11 +107,9 @@ export class NotesComponent {
       });
     }
   }
-  
 
   saveNote(): void {
     if (this.isEditing && this.editNoteId !== null) {
-      // Update existing note
       this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
         next: () => {
           this.loadNotes();
@@ -113,8 +118,7 @@ export class NotesComponent {
         error: (error) => console.error('Failed to update note', error),
       });
     } else {
-      // Create new note
-      const newNote = { ...this.currentNote, id: undefined }; // Remove `id`
+      const newNote = { ...this.currentNote, id: undefined };
       this.noteService.createNote(newNote).subscribe({
         next: () => {
           this.loadNotes();
