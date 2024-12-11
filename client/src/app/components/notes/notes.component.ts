@@ -25,11 +25,14 @@ export class NotesComponent {
   selectedNote: Note | null = null;
   noteToDelete: Note | null = null;
   noteColor: string = '#ffffff';
-  predefinedColors: string[] = ['#ffffff', '#fef3c7', '#e0f7fa', '#e1bee7'];
+  predefinedColors: string[] = ['#ffffff', '#08b6db', '#daae61',  '#c3ce7b','#e1bee7'];
 
   currentNote: Note = this.createEmptyNote();
 
-  constructor(private noteService: NoteService, private sanitizer: DomSanitizer) {
+  constructor(
+    private noteService: NoteService,
+    private sanitizer: DomSanitizer
+  ) {
     this.loadNotes();
   }
 
@@ -39,9 +42,7 @@ export class NotesComponent {
         this.notes = data;
         this.filteredNotes = [...this.notes];
       },
-      error: (error) => {
-        console.error('Failed to load notes', error);
-      },
+      error: (error) => console.error('Failed to load notes', error),
     });
   }
 
@@ -85,12 +86,12 @@ export class NotesComponent {
     this.isDeleteModalOpen = false;
     this.noteToDelete = null;
   }
-
   confirmDelete(): void {
     if (this.noteToDelete && this.noteToDelete.id) {
       const idToDelete = this.noteToDelete.id;
       this.noteService.deleteNote(idToDelete).subscribe({
         next: () => {
+          // Remove the deleted note from the local arrays
           this.notes = this.notes.filter((note) => note.id !== idToDelete);
           this.filteredNotes = this.filteredNotes.filter(
             (note) => note.id !== idToDelete
@@ -98,8 +99,8 @@ export class NotesComponent {
           this.closeDeleteModal();
         },
         error: (error) => {
-          console.error('Failed to delete note', error);
-          alert('Failed to delete note: ' + (error.message || 'Unknown error'));
+          console.error('Failed to delete note:', error);
+          alert('Failed to delete note. Please try again.');
           this.closeDeleteModal();
         },
       });
@@ -107,13 +108,9 @@ export class NotesComponent {
   }
 
   saveNote(): void {
-    const noteToSave = {
-      ...this.currentNote,
-      color: this.noteColor,
-    };
-
+    this.currentNote.color = this.noteColor;
     if (this.isEditing && this.editNoteId !== null) {
-      this.noteService.updateNote(this.editNoteId, noteToSave).subscribe({
+      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
         next: () => {
           this.loadNotes();
           this.closeModal();
@@ -121,7 +118,7 @@ export class NotesComponent {
         error: (error) => console.error('Failed to update note', error),
       });
     } else {
-      const newNote = { ...noteToSave, id: undefined };
+      const newNote = { ...this.currentNote, id: undefined };
       this.noteService.createNote(newNote).subscribe({
         next: () => {
           this.loadNotes();
