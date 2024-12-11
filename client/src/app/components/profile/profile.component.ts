@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
@@ -99,16 +99,29 @@ export class ProfileComponent {
     }
   }
 
-  // Logout functionality
   logout(): void {
-    // Clear tokens from storage
-    sessionStorage.clear();
-    localStorage.clear();
+    // Log before removal
+    console.log(
+      'Before removal:',
+      localStorage.getItem('token'),
+      localStorage.getItem('user'),
+      sessionStorage.getItem('token')
+    );
 
-    // Log the action for debugging (optional)
-    console.log('User has been logged out. Tokens cleared from storage.');
+    // Remove JWT token and user data from localStorage and sessionStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
 
-    // Redirect to login page
+    // Log after removal
+    console.log(
+      'After removal:',
+      localStorage.getItem('token'),
+      localStorage.getItem('user'),
+      sessionStorage.getItem('token')
+    );
+
+    // Redirect to the login page
     this.router.navigate(['/login']);
   }
 }

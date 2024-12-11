@@ -2,14 +2,17 @@
   <!-- Header Section -->
   <div
     class="bg-white shadow-md border-b-2 border-gray-300 p-4 flex justify-between items-center sticky top-0 z-10"
-  >
-    <input
+  > 
+    <div class="flex space-x-4 items-center">
+      <span class="font-bold text-lg">Notes App</span>
+      <input
       type="text"
       placeholder="Search notes..."
-      class="p-2 border rounded w-64 focus:outline-none focus:ring focus:ring-blue-200"
+      class="p-2 border rounded w-64 focus:outline-none"
       [(ngModel)]="searchTerm"
       (input)="filterNotes()"
     />
+    </div>
     <div class="flex space-x-4 items-center">
       <select
         class="p-2 border rounded bg-white focus:outline-none focus:ring focus:ring-blue-200"
@@ -50,13 +53,22 @@
       <p class="text-sm text-gray-500 italic mb-3 truncate">
         {{ note.category }}
       </p>
-      <p class="text-gray-700 text-sm flex-grow truncate">
-        {{ note.description }}
-      </p>
-      <div class="flex justify-between items-center text-sm text-gray-500">
+      <p
+        [innerHTML]="getSanitizedDescription(note.description)"
+        class="text-gray-700 text-sm overflow-hidden break-words whitespace-normal"
+        style="
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        "
+      ></p>
+
+      <div class="flex justify-between items-center text-sm text-gray-500 mt-auto">
         <p>{{ note.date }}</p>
         <button
-          class="text-red-500 hover:underline"
+          class="text-red-500 hover:underline min-w-[60px] text-center"
           (click)="openDeleteModal(note); $event.stopPropagation()"
         >
           Delete
@@ -68,60 +80,142 @@
   <!-- Modal -->
   <div
     *ngIf="isModalOpen"
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20"
+    class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-20"
   >
-    <div class="bg-white p-6 rounded-md shadow-lg w-96">
-      <h2 class="text-lg font-bold mb-4">
-        {{ isEditing ? "Edit Note" : "New Note" }}
-      </h2>
-      <form (ngSubmit)="saveNote()" class="space-y-4">
-        <div>
-          <label for="title" class="block text-sm font-medium">Title</label>
-          <input
-            type="text"
-            id="title"
-            [(ngModel)]="currentNote.title"
-            name="title"
-            class="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring"
-            required
-          />
-        </div>
-        <div>
-          <label for="category" class="block text-sm font-medium">Category</label>
-          <select
-            id="category"
-            [(ngModel)]="currentNote.category"
-            name="category"
-            class="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring"
-          >
-            <option value="Study">Study</option>
-            <option value="Work">Work</option>
-            <option value="Personal">Personal</option>
-          </select>
-        </div>
-        <div>
-          <label for="description" class="block text-sm font-medium"
-            >Description</label
-          >
-          <textarea
-            id="description"
-            [(ngModel)]="currentNote.description"
-            name="description"
-            class="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring"
-            rows="4"
-          ></textarea>
-        </div>
-        <div class="flex justify-end space-x-4">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg">
+      <h2 class="text-3xl font-bold mb-4">New Note</h2>
+
+      <form>
+        <!-- Title Input -->
+        <label for="title" class="block text-xl font-bold mb-2">Title</label>
+        <input
+          id="title"
+          type="text"
+          [(ngModel)]="currentNote.title"
+          name="title"
+          class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        />
+
+        <!-- Task Dropdown -->
+        <label for="task" class="block text-xl font-bold mb-2">Category</label>
+        <select
+          id="task"
+          [(ngModel)]="currentNote.category"
+          name="category"
+          class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        >
+          <option value="" disabled selected>Select a task</option>
+          <option value="Study">Study</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+        </select>
+
+        <!-- Note Textarea -->
+        <label for="note" class="block text-xl font-bold mb-2">Note</label>
+        <div
+          id="note"
+          class="w-full h-36 p-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          contenteditable="true"
+          notesEditableValue
+          [(ngModel)]="currentNote.description"
+          name="description"
+          [ngStyle]="{ backgroundColor: noteColor }"
+        ></div>
+
+        <!-- Toolbar -->
+        <div class="flex gap-2 mb-4">
           <button
             type="button"
-            class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 focus:outline-none focus:ring"
-            (click)="closeModal()"
+            (click)="applyFormatting('bold')"
+            [ngClass]="{ 'bg-blue-500 text-white': isActive('bold') }"
+            class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
           >
-            Cancel
+            <b>B</b>
           </button>
           <button
-            type="submit"
-            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring"
+            type="button"
+            (click)="applyFormatting('italic')"
+            [ngClass]="{ 'bg-blue-500 text-white': isActive('italic') }"
+            class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+          >
+            <i>I</i>
+          </button>
+          <button
+            type="button"
+            (click)="applyFormatting('underline')"
+            [ngClass]="{ 'bg-blue-500 text-white': isActive('underline') }"
+            class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+          >
+            <u>U</u>
+          </button>
+          <button
+            type="button"
+            (click)="applyFormatting('strikethrough')"
+            [ngClass]="{ 'bg-blue-500 text-white': isActive('strikethrough') }"
+            class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+          >
+            S
+          </button>
+
+          <div class="ml-auto flex gap-2">
+            <button
+              type="button"
+              (click)="applyFormatting('justifyLeft')"
+              [ngClass]="{ 'bg-blue-500 text-white': isActive('justifyLeft') }"
+              class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+            >
+              Left
+            </button>
+            <button
+              type="button"
+              (click)="applyFormatting('justifyCenter')"
+              [ngClass]="{
+                'bg-blue-500 text-white': isActive('justifyCenter')
+              }"
+              class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+            >
+              Center
+            </button>
+            <button
+              type="button"
+              (click)="applyFormatting('justifyRight')"
+              [ngClass]="{ 'bg-blue-500 text-white': isActive('justifyRight') }"
+              class="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-200"
+            >
+              Right
+            </button>
+          </div>
+        </div>
+
+        <!-- Color Picker -->
+        <div class="mb-4">
+          <span class="block text-xl font-bold mb-2">Color</span>
+          <div class="flex gap-2">
+            <div
+              *ngFor="let color of predefinedColors"
+              class="w-8 h-8 rounded-full border-2 cursor-pointer hover:border-black"
+              [ngStyle]="{ backgroundColor: color }"
+              (click)="setNoteColor(color)"
+            ></div>
+            <!-- Custom Color Picker -->
+            <div
+              class="relative w-8 h-8 rounded-full border-2 flex items-center justify-center"
+            >
+              <input
+                type="color"
+                (change)="onColorChange($event)"
+                class="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+          <button
+            type="button"
+            class="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
+            (click)="saveNote()"
           >
             Save
           </button>
@@ -145,10 +239,8 @@
         </p>
         <div
           class="text-gray-700 text-base whitespace-pre-wrap break-words"
-          style="word-wrap: break-word"
-        >
-          {{ selectedNote?.description }}
-        </div>
+          [innerHTML]="getSanitizedDescription(selectedNote?.description || '')"
+        ></div>
         <p class="text-sm text-gray-500 mt-4">Date: {{ selectedNote?.date }}</p>
       </div>
       <div class="flex justify-start mt-4">
