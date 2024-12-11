@@ -25,7 +25,7 @@ export class NotesComponent {
   selectedNote: Note | null = null;
   noteToDelete: Note | null = null;
   noteColor: string = '#ffffff';
-  predefinedColors: string[] = ['#ffffff', '#fef3c7', '#e0f7fa', '#e1bee7'];
+  predefinedColors: string[] = ['#ffffff', '#08b6db', '#daae61',  '#c3ce7b','#e1bee7'];
 
   currentNote: Note = this.createEmptyNote();
 
