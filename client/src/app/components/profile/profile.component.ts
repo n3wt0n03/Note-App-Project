@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
@@ -9,6 +10,8 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
+  constructor(private router: Router) {}
+
   // Simulated user data fetched from the server
   user = {
     firstName: 'John',
@@ -94,5 +97,31 @@ export class ProfileComponent {
       this.emailDisplay = this.censorEmail(this.rawEmail);
       this.revealButtonText = 'Reveal';
     }
+  }
+
+  logout(): void {
+    // Log before removal
+    console.log(
+      'Before removal:',
+      localStorage.getItem('token'),
+      localStorage.getItem('user'),
+      sessionStorage.getItem('token')
+    );
+
+    // Remove JWT token and user data from localStorage and sessionStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+
+    // Log after removal
+    console.log(
+      'After removal:',
+      localStorage.getItem('token'),
+      localStorage.getItem('user'),
+      sessionStorage.getItem('token')
+    );
+
+    // Redirect to the login page
+    this.router.navigate(['/login']);
   }
 }
