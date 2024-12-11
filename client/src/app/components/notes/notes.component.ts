@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
 import { Note } from '../../model/note.model';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { NotesEditableValueDirective } from './notes-editable-value.directive';
 
 @Component({
   selector: 'app-notes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NotesEditableValueDirective],
   templateUrl: './notes.component.html',
 })
 export class NotesComponent {
@@ -21,11 +23,13 @@ export class NotesComponent {
   isEditing = false;
   editNoteId: number | null = null;
   selectedNote: Note | null = null;
-  noteToDelete: Note | null = null; // Note to confirm deletion
+  noteToDelete: Note | null = null;
+  noteColor: string = '#ffffff';
+  predefinedColors: string[] = ['#ffffff', '#fef3c7', '#e0f7fa', '#e1bee7'];
 
   currentNote: Note = this.createEmptyNote();
 
-  constructor(private noteService: NoteService) {
+  constructor(private noteService: NoteService, private sanitizer: DomSanitizer) {
     this.loadNotes();
   }
 
@@ -44,6 +48,7 @@ export class NotesComponent {
   openAddNoteModal(): void {
     this.isEditing = false;
     this.currentNote = this.createEmptyNote();
+    this.noteColor = '#ffffff';
     this.isModalOpen = true;
   }
 
@@ -51,6 +56,7 @@ export class NotesComponent {
     this.isEditing = true;
     this.editNoteId = note.id ?? null;
     this.currentNote = { ...note };
+    this.noteColor = note.color ?? '#ffffff';
     this.isModalOpen = true;
   }
 
@@ -79,17 +85,16 @@ export class NotesComponent {
     this.isDeleteModalOpen = false;
     this.noteToDelete = null;
   }
+
   confirmDelete(): void {
     if (this.noteToDelete && this.noteToDelete.id) {
       const idToDelete = this.noteToDelete.id;
       this.noteService.deleteNote(idToDelete).subscribe({
         next: () => {
-          // Remove the note from the local arrays immediately
           this.notes = this.notes.filter((note) => note.id !== idToDelete);
           this.filteredNotes = this.filteredNotes.filter(
             (note) => note.id !== idToDelete
           );
-  
           this.closeDeleteModal();
         },
         error: (error) => {
@@ -100,12 +105,15 @@ export class NotesComponent {
       });
     }
   }
-  
 
   saveNote(): void {
+    const noteToSave = {
+      ...this.currentNote,
+      color: this.noteColor,
+    };
+
     if (this.isEditing && this.editNoteId !== null) {
-      // Update existing note
-      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
+      this.noteService.updateNote(this.editNoteId, noteToSave).subscribe({
         next: () => {
           this.loadNotes();
           this.closeModal();
@@ -113,8 +121,7 @@ export class NotesComponent {
         error: (error) => console.error('Failed to update note', error),
       });
     } else {
-      // Create new note
-      const newNote = { ...this.currentNote, id: undefined }; // Remove `id`
+      const newNote = { ...noteToSave, id: undefined };
       this.noteService.createNote(newNote).subscribe({
         next: () => {
           this.loadNotes();
@@ -122,6 +129,17 @@ export class NotesComponent {
         },
         error: (error) => console.error('Failed to create note', error),
       });
+    }
+  }
+
+  setNoteColor(color: string): void {
+    this.noteColor = color;
+  }
+
+  onColorChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input && input.value) {
+      this.setNoteColor(input.value);
     }
   }
 
@@ -151,6 +169,19 @@ export class NotesComponent {
       category: 'Study',
       description: '',
       date: new Date().toISOString().split('T')[0],
+      color: '#ffffff',
     };
+  }
+
+  applyFormatting(format: string): void {
+    document.execCommand(format, false, '');
+  }
+
+  isActive(format: string): boolean {
+    return document.queryCommandState(format);
+  }
+
+  getSanitizedDescription(description: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(description);
   }
 }
