@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -41,6 +41,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     private userService: UserService,
     private noteService: NoteService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
 
@@ -118,21 +119,27 @@ export class ProfileComponent implements OnInit {
       const updatedUser: User = {
         id: this.userId!,
         username: this.username,
-        email: this.user?.email ?? '', // Keep email unchanged
+        email: this.user?.email ?? '',
         firstName: this.displayName.split(' ')[0],
         lastName: this.displayName.split(' ')[1],
         bio: this.bio,
         phoneNumber: this.phoneNumber,
-        password: '', // Do not include the password
+        password: '',
       };
+
       this.userService.updateUserProfile(this.userId!, updatedUser).subscribe(
         (updated) => {
           alert('Profile updated successfully');
           this.user = updated;
+
+          // Update localStorage with the new user data
+          localStorage.setItem('user', JSON.stringify(updated));
+
+          // Trigger a manual change detection to refresh the view
+          this.cdr.detectChanges();
         },
         (error) => alert('Error updating profile: ' + error.message)
       );
-      window.location.reload();
     }
     this.closeModal();
   }
