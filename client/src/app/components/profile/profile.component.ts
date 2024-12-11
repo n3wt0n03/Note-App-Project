@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-profile',
@@ -10,8 +11,12 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
-  constructor(private router: Router) {}
-
+  isDarkMode: boolean = false;
+  constructor(private router: Router, private themeService: ThemeService) {
+    this.themeService.isDarkMode$.subscribe((isDark) => {
+      this.isDarkMode = isDark;
+    });
+  }
   // Simulated user data fetched from the server
   user = {
     firstName: 'John',
