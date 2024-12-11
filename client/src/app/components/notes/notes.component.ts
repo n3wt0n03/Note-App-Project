@@ -2,7 +2,10 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
+import { CategoryService } from '../../services/category.service'; // Added CategoryService
 import { Note } from '../../model/note.model';
+import { Category } from '../../model/category.model';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { NotesEditableValueDirective } from './notes-editable-value.directive';
 
@@ -15,6 +18,7 @@ import { NotesEditableValueDirective } from './notes-editable-value.directive';
 export class NotesComponent {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
+  categories: Category[] = []; // Store fetched categories
   searchTerm: string = '';
   sortOrder: string = 'latest';
   isModalOpen = false;
@@ -25,15 +29,23 @@ export class NotesComponent {
   selectedNote: Note | null = null;
   noteToDelete: Note | null = null;
   noteColor: string = '#ffffff';
-  predefinedColors: string[] = ['#ffffff', '#08b6db', '#daae61',  '#c3ce7b','#e1bee7'];
+  predefinedColors: string[] = [
+    '#ffffff',
+    '#08b6db',
+    '#daae61',
+    '#c3ce7b',
+    '#e1bee7',
+  ];
 
   currentNote: Note = this.createEmptyNote();
 
   constructor(
     private noteService: NoteService,
+    private categoryService: CategoryService, // Injected CategoryService
     private sanitizer: DomSanitizer
   ) {
     this.loadNotes();
+    this.loadCategories(); // Fetch categories when the component initializes
   }
 
   loadNotes(): void {
@@ -44,6 +56,25 @@ export class NotesComponent {
       },
       error: (error) => console.error('Failed to load notes', error),
     });
+  }
+
+  loadCategories(): void {
+    this.categoryService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => console.error('Failed to load categories', error),
+    });
+  }
+  getCategoryNameById(category: Category | { id: number } | null): string {
+    if (!category) {
+      return 'Uncategorized';
+    }
+    if ('name' in category) {
+      return category.name;
+    }
+    const categoryData = this.categories.find((cat) => cat.id === category.id);
+    return categoryData ? categoryData.name : 'Uncategorized';
   }
 
   openAddNoteModal(): void {
@@ -58,6 +89,12 @@ export class NotesComponent {
     this.editNoteId = note.id ?? null;
     this.currentNote = { ...note };
     this.noteColor = note.color ?? '#ffffff';
+
+    if (this.currentNote.category && 'id' in this.currentNote.category) {
+      const categoryId = (this.currentNote.category as { id: number }).id;
+      this.currentNote.category =
+        this.categories.find((category) => category.id === categoryId) || null;
+    }
     this.isModalOpen = true;
   }
 
@@ -86,6 +123,7 @@ export class NotesComponent {
     this.isDeleteModalOpen = false;
     this.noteToDelete = null;
   }
+
   confirmDelete(): void {
     if (this.noteToDelete && this.noteToDelete.id) {
       const idToDelete = this.noteToDelete.id;
@@ -109,6 +147,10 @@ export class NotesComponent {
 
   saveNote(): void {
     this.currentNote.color = this.noteColor;
+    this.currentNote.category = this.currentNote.category
+      ? ({ id: this.currentNote.category.id } as Category)
+      : null;
+
     if (this.isEditing && this.editNoteId !== null) {
       this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
         next: () => {
@@ -163,7 +205,7 @@ export class NotesComponent {
     return {
       id: 0,
       title: '',
-      category: 'Study',
+      category: null,
       description: '',
       date: new Date().toISOString().split('T')[0],
       color: '#ffffff',
