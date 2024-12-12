@@ -18,6 +18,9 @@ public class Category {
     @Column(nullable = false)
     private Integer notesCount = 0;
 
+    @Column(nullable = false)
+    private Integer orderIndex; // Field for category ordering
+
     // Getters and Setters
 
     public Long getId() {
@@ -50,5 +53,13 @@ public class Category {
 
     public void setNotesCount(Integer notesCount) {
         this.notesCount = notesCount;
+    }
+
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

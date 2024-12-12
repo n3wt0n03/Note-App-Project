@@ -16,7 +16,10 @@ export class CategoryService {
   getCategories(): Observable<Category[]> {
     return this.http
       .get<Category[]>(this.apiUrl, { headers: this.getHeaders() })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        // Optionally sort on the frontend if needed
+        catchError(this.handleError)
+      );
   }
 
   // Fetch a single category by ID
@@ -49,6 +52,15 @@ export class CategoryService {
       .pipe(catchError(this.handleError));
   }
 
+  // Reorder categories
+  reorderCategories(orderedCategoryIds: number[]): Observable<void> {
+    return this.http
+      .put<void>(`${this.apiUrl}/reorder`, orderedCategoryIds, {
+        headers: this.getHeaders(),
+      })
+      .pipe(catchError(this.handleError));
+  }
+
   // Helper method to get headers with token
   private getHeaders(): HttpHeaders {
     const user = localStorage.getItem('user');
@@ -70,9 +82,10 @@ export class CategoryService {
       Authorization: `Bearer ${token}`,
     });
   }
-
   private handleError(error: any): Observable<never> {
-    console.error('An error occurred:', error);
+    if (error.status === 400 && error.error.message) {
+      return throwError(() => new Error(error.error.message)); // Pass the backend error message
+    }
     if (error.status === 403) {
       return throwError(
         () => new Error('You do not have permission to perform this action.')

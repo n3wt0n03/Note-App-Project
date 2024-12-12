@@ -19,7 +19,7 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+        return ResponseEntity.ok(categoryService.getAllCategoriesOrdered());
     }
 
     @GetMapping("/{id}")
@@ -33,11 +33,22 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.createCategory(category));
     }
 
-
     @PutMapping("/{id}")
     public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
         return ResponseEntity.ok(categoryService.updateCategory(id, category));
     }
+
+    @PutMapping("/{id}/order")
+    public ResponseEntity<Void> updateCategoryOrder(@PathVariable Long id, @RequestBody Integer newIndex) {
+        categoryService.updateCategoryOrder(id, newIndex);
+        return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/reorder")
+    public ResponseEntity<Void> reorderCategories(@RequestBody List<Long> orderedCategoryIds) {
+        categoryService.reorderCategories(orderedCategoryIds);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {

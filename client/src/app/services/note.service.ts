@@ -50,6 +50,15 @@ export class NoteService {
       .pipe(catchError(this.handleError));
   }
 
+  getNotesByCategoryId(categoryId: number): Observable<Note[]> {
+    return this.http
+      .get<Note[]>(`${this.apiUrl}?categoryId=${categoryId}`, {
+        headers: this.getHeaders(),
+      })
+      .pipe(catchError(this.handleError));
+  }
+
+
   // Helper method to get headers with token
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token'); // Retrieve the token from localStorage

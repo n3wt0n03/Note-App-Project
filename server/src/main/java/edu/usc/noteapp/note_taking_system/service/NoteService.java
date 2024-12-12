@@ -32,19 +32,21 @@ public class NoteService {
 
     // Create a new note
     public Note createNote(Note note) {
-        // Validate category if provided
-        if (note.getCategory() != null) {
+        // Set to "Uncategorized" if no category is provided
+        if (note.getCategory() == null) {
+            Category uncategorized = getOrCreateUncategorizedCategory();
+            note.setCategory(uncategorized);
+        } else {
+            // Validate category if provided
             Category category = categoryRepository.findById(note.getCategory().getId())
                     .orElseThrow(() -> new RuntimeException("Category not found with ID: " + note.getCategory().getId()));
-            note.setCategory(category); // Set the validated category
+            note.setCategory(category);
         }
 
         Note savedNote = noteRepository.save(note);
 
-        // Update notes count if category is provided
-        if (note.getCategory() != null) {
-            updateNotesCount(note.getCategory().getId());
-        }
+        // Update notes count for the associated category
+        updateNotesCount(note.getCategory().getId());
 
         return savedNote;
     }
@@ -60,13 +62,14 @@ public class NoteService {
             existingNote.setDate(updatedNote.getDate());
             existingNote.setColor(updatedNote.getColor());
 
-            // Validate and update category
+            // Validate and update category or set to "Uncategorized" if none provided
             if (updatedNote.getCategory() != null) {
                 Category category = categoryRepository.findById(updatedNote.getCategory().getId())
                         .orElseThrow(() -> new RuntimeException("Category not found with ID: " + updatedNote.getCategory().getId()));
                 existingNote.setCategory(category);
             } else {
-                existingNote.setCategory(null); // Allow clearing the category
+                Category uncategorized = getOrCreateUncategorizedCategory();
+                existingNote.setCategory(uncategorized);
             }
 
             Note savedNote = noteRepository.save(existingNote);
@@ -75,8 +78,8 @@ public class NoteService {
             if (oldCategoryId != null) {
                 updateNotesCount(oldCategoryId);
             }
-            if (updatedNote.getCategory() != null) {
-                updateNotesCount(updatedNote.getCategory().getId());
+            if (existingNote.getCategory() != null) {
+                updateNotesCount(existingNote.getCategory().getId());
             }
 
             return savedNote;
@@ -105,5 +108,17 @@ public class NoteService {
                 .orElseThrow(() -> new RuntimeException("Category not found with ID: " + categoryId));
         category.setNotesCount(count);
         categoryRepository.save(category);
+    }
+
+    // Get or create the "Uncategorized" category
+    private Category getOrCreateUncategorizedCategory() {
+        return categoryRepository.findByName("Uncategorized")
+                .orElseGet(() -> {
+                    Category uncategorized = new Category();
+                    uncategorized.setName("Uncategorized");
+                    uncategorized.setColor("#cccccc"); // Default color
+                    uncategorized.setNotesCount(0);
+                    return categoryRepository.save(uncategorized);
+                });
     }
 }
