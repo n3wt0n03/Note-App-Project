@@ -5,7 +5,6 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "notes") // This specifies the table name
-
 public class Note {
 
     @Id
@@ -14,17 +13,19 @@ public class Note {
 
     private String title;
 
-    private String category;
-
     private String description;
 
     private LocalDate date;
 
-    private String color; // Add this field
+    private String color; // Note-specific color field
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = true) // New relationship to the Category entity
+    private Category category;
 
     // Getters and Setters
     public Long getId() {
@@ -41,14 +42,6 @@ public class Note {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 
     public String getDescription() {
@@ -68,11 +61,11 @@ public class Note {
     }
 
     public String getColor() {
-        return color; // Getter for color
+        return color;
     }
 
     public void setColor(String color) {
-        this.color = color; // Setter for color
+        this.color = color;
     }
 
     public User getUser() {
@@ -81,5 +74,13 @@ public class Note {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }

@@ -2,16 +2,16 @@
   <!-- Header Section -->
   <div
     class="bg-white shadow-md border-b-2 border-gray-300 p-4 flex justify-between items-center sticky top-0 z-10"
-  > 
+  >
     <div class="flex space-x-4 items-center">
       <span class="font-bold text-lg">NoteWorthy</span>
       <input
-      type="text"
-      placeholder="Search notes..."
-      class="p-2 border rounded w-64 focus:outline-none"
-      [(ngModel)]="searchTerm"
-      (input)="filterNotes()"
-    />
+        type="text"
+        placeholder="Search notes..."
+        class="p-2 border rounded w-64 focus:outline-none focus:ring focus:ring-blue-200"
+        [(ngModel)]="searchTerm"
+        (input)="filterNotes()"
+      />
     </div>
     <div class="flex space-x-4 items-center">
       <select
@@ -54,8 +54,9 @@
         {{ note.title }}
       </h3>
       <p class="text-sm text-gray-500 italic mb-3 truncate">
-        {{ note.category }}
+        {{ getCategoryNameById(note.category) }}
       </p>
+
       <p
         [innerHTML]="getSanitizedDescription(note.description)"
         class="text-gray-700 text-sm overflow-hidden break-words whitespace-normal"
@@ -84,8 +85,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Modal -->
   <!-- Modal -->
   <div
     *ngIf="isModalOpen"
@@ -107,7 +106,7 @@
           class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
         />
 
-        <!-- Task Dropdown -->
+        <!-- Category Dropdown -->
         <label for="task" class="block text-xl font-bold mb-2">Category</label>
         <select
           id="task"
@@ -115,10 +114,10 @@
           name="category"
           class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
         >
-          <option value="" disabled selected>Select a task</option>
-          <option value="Study">Study</option>
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
+          <option value="" disabled>Select a category</option>
+          <option *ngFor="let category of categories" [ngValue]="category">
+            {{ category.name }}
+          </option>
         </select>
 
         <!-- Note Textarea -->
@@ -191,7 +190,7 @@
       <div class="flex-grow">
         <h2 class="text-xl font-bold mb-4">{{ selectedNote?.title }}</h2>
         <p class="text-sm text-gray-500 italic mb-4">
-          {{ selectedNote?.category }}
+          {{ getCategoryNameById(selectedNote?.category ?? null) }}
         </p>
         <div
           class="text-gray-700 text-base whitespace-pre-wrap break-words"
@@ -199,6 +198,7 @@
         ></div>
         <p class="text-sm text-gray-500 mt-4">Date: {{ selectedNote?.date }}</p>
       </div>
+
       <div class="flex justify-start mt-4">
         <button
           type="button"
