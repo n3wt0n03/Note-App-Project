@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
 
@@ -29,37 +28,38 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            // Extract token from the request
+            // Extract token
             String token = getTokenFromRequest(request);
             System.out.println("Received Token: " + token);
 
-            if (token != null && jwtTokenUtil.validateToken(token)) {
-                // Extract username (email) from token
-                String email = jwtTokenUtil.getUsernameFromToken(token);
-                System.out.println("Authenticated Email: " + email);
+            if (token != null) {
+                // Validate token
+                if (jwtTokenUtil.validateToken(token)) {
+                    String email = jwtTokenUtil.getUsernameFromToken(token);
+                    System.out.println("Authenticated Email: " + email);
 
-                // Load user details from the database
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    // Load user details
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                // Create and set Authentication in SecurityContext
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // Set authentication
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    System.err.println("Invalid token detected.");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token.");
+                    return; // Stop further processing
+                }
             }
         } catch (Exception ex) {
             System.err.println("Authentication error: " + ex.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed.");
+            return; // Stop further processing
         }
 
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extracts the JWT token from the Authorization header of the HTTP request.
-     *
-     * @param request The HTTP request.
-     * @return The JWT token if present, otherwise null.
-     */
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
@@ -68,3 +68,4 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         return null;
     }
 }
+

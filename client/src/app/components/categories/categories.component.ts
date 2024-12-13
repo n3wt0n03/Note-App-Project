@@ -79,12 +79,14 @@ export class CategoriesComponent implements OnInit {
 
   // Open modal for adding a new category
   openAddCategoryModal(): void {
+    this.categoryErrorMessage = null;
     this.currentCategory = this.createEmptyCategory();
     this.isCategoryModalOpen = true;
   }
 
   // Open modal for editing an existing category
   editCategory(category: Category | null): void {
+    this.categoryErrorMessage = null;
     if (!category) {
       console.error('No category selected for editing.');
       return;
@@ -105,11 +107,22 @@ export class CategoriesComponent implements OnInit {
   }
 
   // Open delete confirmation modal
-  confirmDeleteCategory(id: number | null | undefined): void {
+  confirmDeleteCategory(
+    id: number | null | undefined,
+    categoryName: string
+  ): void {
+    if (categoryName === 'Uncategorized') {
+      console.error('The "Uncategorized" category cannot be deleted.');
+      this.categoryErrorMessage =
+        'The "Uncategorized" category cannot be deleted.';
+      return;
+    }
+
     if (id == null) {
       console.error('Category ID is null or undefined.');
       return;
     }
+
     this.categoryToDeleteId = id;
     this.isDeleteConfirmationOpen = true;
     this.isSettingsOpen = false; // Close settings modal
@@ -144,7 +157,7 @@ export class CategoriesComponent implements OnInit {
   // Save a new or updated category
   saveCategory(): void {
     this.categoryErrorMessage = null; // Clear previous errors
-  
+
     if (this.currentCategory.id) {
       // Update existing category
       this.categoryService
@@ -155,13 +168,9 @@ export class CategoriesComponent implements OnInit {
             this.closeCategoryModal();
           },
           error: (err) => {
-            if (err.error && err.error.message) {
-              this.categoryErrorMessage = err.error.message; // Use backend error message
-            } else {
-              this.categoryErrorMessage =
-                'Failed to update category. Please try again.';
-            }
-            console.error('Failed to update category:', err);
+            this.categoryErrorMessage = `Failed to update category: ${
+              err.message || 'Please try again.'
+            }`;
           },
         });
     } else {
@@ -172,22 +181,14 @@ export class CategoriesComponent implements OnInit {
           this.closeCategoryModal();
         },
         error: (err) => {
-          if (
-            err.error &&
-            err.error.message &&
-            err.error.message.includes('already exists')
-          ) {
-            this.categoryErrorMessage = 'This category name already exists.';
-          } else {
-            this.categoryErrorMessage =
-              'This category name already exists.';
-          }
-          console.error('Failed to create category:', err);
+          this.categoryErrorMessage = `Failed to create category: ${
+            err.message || 'Please try again.'
+          }`;
         },
       });
     }
   }
-  
+
   // Handle drag-and-drop to reorder categories
   onDrop(event: CdkDragDrop<Category[]>): void {
     moveItemInArray(this.categories, event.previousIndex, event.currentIndex);
@@ -199,7 +200,6 @@ export class CategoriesComponent implements OnInit {
 
     // Send updated order to backend
     this.categoryService.reorderCategories(orderedCategoryIds).subscribe({
-      next: () => console.log('Categories reordered successfully'),
       error: (err) => console.error('Failed to reorder categories:', err),
     });
   }

@@ -2,8 +2,10 @@ package edu.usc.noteapp.note_taking_system.controller;
 
 import edu.usc.noteapp.note_taking_system.model.Category;
 import edu.usc.noteapp.note_taking_system.service.CategoryService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -28,14 +30,30 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        System.out.println("Received category: " + category);
-        return ResponseEntity.ok(categoryService.createCategory(category));
+    public ResponseEntity<?> createCategory(@RequestBody Category category) {
+        try {
+            System.out.println("Received category: " + category);
+            return ResponseEntity.ok(categoryService.createCategory(category));
+        } catch (ResponseStatusException e) {
+            // Return error with appropriate status code and message
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            // General exception handler
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, category));
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Category category) {
+        try {
+            return ResponseEntity.ok(categoryService.updateCategory(id, category));
+        } catch (ResponseStatusException e) {
+            // Return error with appropriate status code and message
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            // General exception handler
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
     }
 
     @PutMapping("/{id}/order")
@@ -43,16 +61,29 @@ public class CategoryController {
         categoryService.updateCategoryOrder(id, newIndex);
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/reorder")
     public ResponseEntity<Void> reorderCategories(@RequestBody List<Long> orderedCategoryIds) {
         categoryService.reorderCategories(orderedCategoryIds);
         return ResponseEntity.noContent().build();
     }
 
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        try {
+            Category category = categoryService.getCategoryById(id);
+            if ("Uncategorized".equalsIgnoreCase(category.getName())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The 'Uncategorized' category cannot be deleted.");
+            }
+            categoryService.deleteCategory(id);
+            return ResponseEntity.noContent().build();
+        } catch (ResponseStatusException e) {
+            // Return error with appropriate status code and message
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            // General exception handler
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
     }
+
 }
