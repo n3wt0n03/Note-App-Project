@@ -11,6 +11,10 @@
       </button>
     </div>
 
+    <p class="text-sm text-gray-500 mb-2">
+      Drag and drop categories to reorder them.
+    </p>
+
     <ul cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-2">
       <li
         *ngFor="let category of categories"
@@ -72,12 +76,31 @@
           >
             Edit Category
           </button>
-          <button
-            class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100"
-            (click)="confirmDeleteCategory(selectedCategory.id)"
-          >
-            Delete Category
-          </button>
+          <div class="block w-full text-left px-4 py-2 text-sm">
+            <button
+              class="w-full text-left"
+              [class.hover\:bg-red-100]="
+                selectedCategory?.name !== 'Uncategorized'
+              "
+              [class.text-gray-400]="selectedCategory?.name === 'Uncategorized'"
+              [class.text-red-500]="selectedCategory?.name !== 'Uncategorized'"
+              [disabled]="selectedCategory?.name === 'Uncategorized'"
+              (click)="
+                confirmDeleteCategory(
+                  selectedCategory?.id,
+                  selectedCategory?.name ?? ''
+                )
+              "
+            >
+              Delete Category
+            </button>
+            <span
+              *ngIf="selectedCategory?.name === 'Uncategorized'"
+              class="text-xs text-yellow-500"
+            >
+            Uncategorized should not be deleted.
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -106,6 +129,7 @@
       No notes available for this category.
     </div>
   </div>
+
   <!-- Add/Edit Category Modal -->
   <div
     *ngIf="isCategoryModalOpen"
@@ -142,6 +166,7 @@
           id="categoryColor"
           type="color"
           [(ngModel)]="currentCategory.color"
+          [value]="currentCategory.color || '#ffffff'"
           name="color"
           class="w-full h-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 mb-4"
         />

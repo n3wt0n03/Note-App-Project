@@ -83,19 +83,23 @@ export class CategoryService {
     });
   }
   private handleError(error: any): Observable<never> {
-    if (error.status === 400 && error.error.message) {
-      return throwError(() => new Error(error.error.message)); // Pass the backend error message
+    // Check if the error contains a structured backend response
+    if (error.status === 400 && error.error?.message) {
+        return throwError(() => new Error(error.error.message)); // Pass the backend error message
     }
     if (error.status === 403) {
-      return throwError(
-        () => new Error('You do not have permission to perform this action.')
-      );
+        return throwError(
+            () => new Error('You do not have permission to perform this action.')
+        );
     }
-    return throwError(
-      () =>
-        new Error(
-          error.message || 'Something went wrong, please try again later.'
-        )
-    );
-  }
+    if (error.status === 409) {
+        // Handle conflict error (e.g., duplicate category)
+        const conflictMessage = error.error?.message || 'This category already exists.';
+        return throwError(() => new Error(conflictMessage));
+    }
+    // Fallback for unexpected errors
+    const defaultErrorMessage = error?.message || 'An unexpected error occurred. Please try again later.';
+    return throwError(() => new Error(defaultErrorMessage));
+}
+
 }

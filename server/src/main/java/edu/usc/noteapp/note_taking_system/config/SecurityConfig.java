@@ -1,6 +1,7 @@
 package edu.usc.noteapp.note_taking_system.config;
 
 import edu.usc.noteapp.note_taking_system.security.JwtTokenFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,6 +35,18 @@ public class SecurityConfig {
                     cors.setAllowCredentials(true);
                     return cors;
                 }).and()
+                .exceptionHandling()
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"message\": \"Access Denied: " + accessDeniedException.getMessage() + "\"}");
+                })
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"message\": \"Unauthorized: " + authException.getMessage() + "\"}");
+                })
+                .and()
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Allow unauthenticated access to auth endpoints
                         .anyRequest().authenticated() // Require authentication for all other endpoints
