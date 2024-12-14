@@ -1,9 +1,9 @@
-<div class="flex h-screen">
+<div class="flex h-screen" [ngClass]="{'bg-blue-50 text-black': !isDarkMode, 'bg-gray-900 text-white': isDarkMode}">
   <!-- Sidebar -->
   <app-sidebar></app-sidebar>
 
   <!-- Main Content -->
-  <div class="flex-grow bg-blue-50 p-6">
+  <div class="flex-grow p-6" [ngClass]="{'bg-blue-50': !isDarkMode, 'bg-gray-800': isDarkMode}">
     <router-outlet></router-outlet>
   </div>
 </div>

@@ -1,7 +1,11 @@
 <div
-  class="h-screen flex flex-col bg-white text-gray-800 shadow-lg"
-  [class.w-20]="!isExpanded"
-  [class.w-64]="isExpanded"
+  class="h-screen flex flex-col shadow-lg transition-all duration-300 ease-in-out"
+  [ngClass]="{
+    'w-20': !isExpanded,
+    'w-64': isExpanded,
+    'bg-white text-gray-800': !isDarkMode,
+    'bg-gray-800 text-white': isDarkMode
+  }"
   (mouseover)="expandSidebar(true)"
   (mouseleave)="expandSidebar(false)"
 >
@@ -34,21 +38,31 @@
       <li>
         <button
           routerLink="/dashboard/notes"
-          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
+          class="flex items-center w-full p-2 rounded-lg transition-colors duration-200"
           [ngClass]="{
             'justify-center': !isExpanded,
-            'justify-start px-7': isExpanded
+            'justify-start px-7': isExpanded,
+            'hover:bg-gray-100': !isDarkMode,
+            'hover:bg-gray-700': isDarkMode
           }"
         >
           <span
             class="fas fa-home text-2xl"
-            [class.text-blue-500]="isActive('notes')"
+            [ngClass]="{
+              'text-blue-500': isActive('notes'),
+              'text-gray-600': !isActive('notes') && !isDarkMode,
+              'text-gray-300': !isActive('notes') && isDarkMode
+            }"
             *ngIf="!isExpanded"
           ></span>
           <div *ngIf="isExpanded" class="flex items-center space-x-4">
             <span
               class="fas fa-home text-2xl"
-              [class.text-blue-500]="isActive('notes')"
+              [ngClass]="{
+                'text-blue-500': isActive('notes'),
+                'text-gray-600': !isActive('notes') && !isDarkMode,
+                'text-gray-300': !isActive('notes') && isDarkMode
+              }"
             ></span>
             <span>Notes</span>
           </div>
@@ -57,21 +71,31 @@
       <li>
         <button
           routerLink="/dashboard/categories"
-          class="flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
+          class="flex items-center w-full p-2 rounded-lg transition-colors duration-200"
           [ngClass]="{
             'justify-center': !isExpanded,
-            'justify-start px-7': isExpanded
+            'justify-start px-7': isExpanded,
+            'hover:bg-gray-100': !isDarkMode,
+            'hover:bg-gray-700': isDarkMode
           }"
         >
           <span
             class="fas fa-th-list text-2xl"
-            [class.text-blue-500]="isActive('categories')"
+            [ngClass]="{
+              'text-blue-500': isActive('categories'),
+              'text-gray-600': !isActive('categories') && !isDarkMode,
+              'text-gray-300': !isActive('categories') && isDarkMode
+            }"
             *ngIf="!isExpanded"
           ></span>
           <div *ngIf="isExpanded" class="flex items-center space-x-4">
             <span
               class="fas fa-th-list text-2xl"
-              [class.text-blue-500]="isActive('categories')"
+              [ngClass]="{
+                'text-blue-500': isActive('categories'),
+                'text-gray-600': !isActive('categories') && !isDarkMode,
+                'text-gray-300': !isActive('categories') && isDarkMode
+              }"
             ></span>
             <span>Categories</span>
           </div>
@@ -81,9 +105,9 @@
   </nav>
 
   <!-- Toggle Button -->
-  <div class="p-4 border-t border-gray-200">
+  <div class="p-4" [ngClass]="{'border-t border-gray-200': !isDarkMode, 'border-t border-gray-700': isDarkMode}">
     <button
-      class="flex items-center justify-center w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+      class="flex items-center justify-center w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition-colors duration-200"
       (click)="logout()"
     >
       <span *ngIf="!isExpanded" class="fas fa-right-from-bracket"></span>

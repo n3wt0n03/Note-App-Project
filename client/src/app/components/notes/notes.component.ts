@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
+import { ThemeService } from '../../services/theme.service';
 import { Note } from '../../model/note.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { NotesEditableValueDirective } from './notes-editable-value.directive';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notes',
@@ -12,7 +14,7 @@ import { NotesEditableValueDirective } from './notes-editable-value.directive';
   imports: [CommonModule, FormsModule, NotesEditableValueDirective],
   templateUrl: './notes.component.html',
 })
-export class NotesComponent {
+export class NotesComponent implements OnInit, OnDestroy {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
   searchTerm: string = '';
@@ -28,11 +30,27 @@ export class NotesComponent {
   predefinedColors: string[] = ['#ffffff', '#fef3c7', '#e0f7fa', '#e1bee7'];
 
   currentNote: Note = this.createEmptyNote();
+  themeSubscription!: Subscription;
+  isDarkMode!: boolean;
 
-  constructor(private noteService: NoteService, private sanitizer: DomSanitizer) {
+  constructor(
+    private noteService: NoteService, 
+    private sanitizer: DomSanitizer,
+    private themeService: ThemeService
+  ) {
     this.loadNotes();
   }
+  ngOnInit() {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
 
+  ngOnDestroy() {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
   loadNotes(): void {
     this.noteService.getNotes().subscribe({
       next: (data) => {

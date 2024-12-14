@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
@@ -9,29 +11,38 @@ import { CommonModule } from '@angular/common';
   imports: [RouterModule, CommonModule],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit, OnDestroy {
   isExpanded: boolean = false;
+  isDarkMode: boolean = false;
+  private themeSubscription!: Subscription;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private themeService: ThemeService) {}
 
-  // Toggles sidebar expansion when clicking the button
+  ngOnInit() {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
+
+  ngOnDestroy() {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
+
   toggleSidebar(): void {
     this.isExpanded = !this.isExpanded;
   }
 
-  // Checks if a route is active
   isActive(route: string): boolean {
     return this.router.url.includes(route);
   }
 
-  // Expands or collapses sidebar based on hover
   expandSidebar(expand: boolean): void {
     this.isExpanded = expand;
   }
 
-  // Logs out the user
   logout(): void {
-    // Log before removal
     console.log(
       'Before removal:',
       localStorage.getItem('token'),
@@ -39,12 +50,10 @@ export class SidebarComponent {
       sessionStorage.getItem('token')
     );
 
-    // Remove JWT token and user data from localStorage and sessionStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.removeItem('token');
 
-    // Log after removal
     console.log(
       'After removal:',
       localStorage.getItem('token'),
@@ -52,7 +61,6 @@ export class SidebarComponent {
       sessionStorage.getItem('token')
     );
 
-    // Redirect to the login page
     this.router.navigate(['/login']);
   }
 }
