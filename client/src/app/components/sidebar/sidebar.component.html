@@ -21,14 +21,16 @@
       class="rounded-full w-12 h-12 bg-blue-500 flex items-center justify-center text-white font-bold text-lg select-none cursor-pointer"
       routerLink="/dashboard/profile"
     >
-      JD
+      {{ user?.firstName?.[0] || '' }}{{ user?.lastName?.[0] || '' }}
     </div>
     <div
       *ngIf="isExpanded"
       class="ml-3 flex flex-col cursor-pointer"
       routerLink="/dashboard/profile"
     >
-      <span class="font-bold text-lg">John Doe</span>
+      <span class="font-bold text-lg">
+        {{ displayName }}
+      </span>
     </div>
   </div>
 

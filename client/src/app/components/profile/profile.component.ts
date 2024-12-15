@@ -1,91 +1,172 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../../services/user.service';
+import { NoteService } from '../../services/note.service';
+import { User } from '../../model/user.model';
+import { Note } from '../../model/note.model';
 import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
+
 @Component({
   selector: 'app-profile',
   imports: [CommonModule, FormsModule],
   templateUrl: './profile.component.html',
 })
-export class ProfileComponent implements OnInit {
-  constructor(private router: Router, public themeService: ThemeService) {}
-
-  // Simulated user data
-  user = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'user@example.com',
-  };
-
-  // Modal Variables
+export class ProfileComponent implements OnInit, OnDestroy {
+  user: User | null = null;
+  userId: number | null = null;
+  notes: Note[] = [];
+  filteredNotes: Note[] = [];
   isModalOpen = false;
   isChangingPassword = false;
   modalTitle = '';
+
+  rawEmail: string = '';
+  emailDisplay: string = '';
+  revealButtonText: string = '<i class="fa fa-eye" aria-hidden="true"></i>';
+
   oldPassword = '';
   newPassword = '';
   confirmNewPassword = '';
-  
-  // User data
-  displayName = 'John Doe';
-  username = 'John';
-  bio = 'Bio test 123';
-  phoneNumber = '123-456-789';
 
-  ngOnInit() {
-    // Initialization logic if needed
+  displayName = '';
+  username = '';
+  bio = '';
+  phoneNumber = '';
+
+  isDarkMode: boolean = false;
+  private themeSubscription: Subscription;
+
+  constructor(
+    private userService: UserService,
+    private noteService: NoteService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private themeService: ThemeService
+  ) {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
+
+  ngOnInit(): void {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        this.userId = parsedUser.id;
+        this.fetchUserProfile();
+        this.fetchUserNotes();
+      } catch (error) {
+        console.error('Failed to parse user data from localStorage:', error);
+      }
+    } else {
+      console.error('No user data found in localStorage');
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
   }
 
   toggleDarkMode() {
     this.themeService.toggleDarkMode();
   }
 
-  // Modal handling methods
-  openModal(type: number) {
-    this.isModalOpen = true;
-    if (type === 1) {
-      this.isChangingPassword = true;
-      this.modalTitle = 'Change Password';
-    } else if (type === 2) {
-      this.isChangingPassword = false;
-      this.modalTitle = 'Edit Profile';
+  fetchUserNotes(): void {
+    if (this.userId === null) {
+      console.error('User ID is not available for fetching notes');
+      return;
     }
+
+    this.noteService.getNotes().subscribe(
+      (notes) => {
+        this.notes = notes;
+        this.sortNotesByDate();
+      },
+      (error) => console.error('Failed to fetch user notes:', error)
+    );
   }
 
-  closeModal() {
-    this.isModalOpen = false;
-  }
-
-  saveChanges() {
-    if (this.isChangingPassword) {
-      console.log('Password Changed');
-    } else {
-      console.log('Profile Updated:', {
-        displayName: this.displayName,
-        username: this.username,
-        bio: this.bio,
-        phoneNumber: this.phoneNumber,
-      });
+  fetchUserProfile() {
+    if (this.userId === null) {
+      console.error('User ID is not available');
+      return;
     }
-    this.closeModal();
+    this.userService.getUserProfile(this.userId).subscribe(
+      (user) => {
+        this.user = user;
+        this.rawEmail = user.email;
+        this.emailDisplay = this.censorEmail(this.rawEmail);
+        this.displayName = `${user.firstName} ${user.lastName}`;
+        this.username = user.username;
+        this.bio = user.bio;
+        this.phoneNumber = user.phoneNumber;
+      },
+      (error) => console.error('Failed to fetch user profile:', error)
+    );
   }
 
-  // Email handling methods
-  rawEmail: string = this.user.email;
-  emailDisplay: string = this.censorEmail(this.rawEmail);
-  
+  sortNotesByDate(): void {
+    this.notes.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    this.filteredNotes = [...this.notes];
+  }
+
   censorEmail(email: string): string {
     const [localPart, domain] = email.split('@');
     const maskedLocal = '*'.repeat(localPart.length);
     return `${maskedLocal}@${domain}`;
   }
 
-  revealButtonText: string = 'Reveal';
+  saveChanges() {
+    if (this.isChangingPassword) {
+      console.log('Change password logic here');
+    } else {
+      const updatedUser: User = {
+        id: this.userId!,
+        username: this.username,
+        email: this.user?.email ?? '',
+        firstName: this.displayName.split(' ')[0],
+        lastName: this.displayName.split(' ')[1],
+        bio: this.bio,
+        phoneNumber: this.phoneNumber,
+        password: '',
+      };
+
+      this.userService.updateUserProfile(this.userId!, updatedUser).subscribe(
+        (updated) => {
+          alert('Profile updated successfully');
+          this.user = updated;
+          localStorage.setItem('user', JSON.stringify(updated));
+          this.cdr.detectChanges();
+        },
+        (error) => alert('Error updating profile: ' + error.message)
+      );
+    }
+    this.closeModal();
+  }
+
+  openModal(type: number) {
+    this.isModalOpen = true;
+    this.isChangingPassword = type === 1;
+    this.modalTitle = type === 1 ? 'Change Password' : 'Edit Profile';
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+  }
 
   toggleEmail(): void {
     if (this.emailDisplay === this.censorEmail(this.rawEmail)) {
       this.emailDisplay = this.rawEmail;
-      this.revealButtonText = 'Hide';
+      this.revealButtonText =
+        '<i class="fa fa-eye-slash" aria-hidden="true"></i>';
     } else {
       this.emailDisplay = this.censorEmail(this.rawEmail);
       this.revealButtonText = 'Reveal';

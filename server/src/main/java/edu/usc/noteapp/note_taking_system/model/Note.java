@@ -1,33 +1,31 @@
 package edu.usc.noteapp.note_taking_system.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "notes")
+@Table(name = "notes") // This specifies the table name
 public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    private String category;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    private String color; // Note-specific color field
+
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore // Prevent the `user` field from being serialized
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = true) // New relationship to the Category entity
+    private Category category;
 
     // Getters and Setters
     public Long getId() {
@@ -46,14 +44,6 @@ public class Note {
         this.title = title;
     }
 
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -70,11 +60,27 @@ public class Note {
         this.date = date;
     }
 
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }

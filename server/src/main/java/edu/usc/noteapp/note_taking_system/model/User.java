@@ -17,6 +17,14 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+    @Column
+    private String firstName;
+    @Column
+    private String lastName;
+    @Column
+    private String bio;
+    @Column
+    private String phoneNumber;
 
     // Getters and Setters
     public Long getId() {
@@ -49,5 +57,36 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }
