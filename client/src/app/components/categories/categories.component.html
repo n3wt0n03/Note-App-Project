@@ -79,17 +79,18 @@
           <div class="block w-full text-left px-4 py-2 text-sm">
             <button
               class="w-full text-left"
-              [class.hover\:bg-red-100]="
-                selectedCategory?.name !== 'Uncategorized'
+              [class.hover:bg-red-100]="
+                selectedCategory.name !== 'Uncategorized'
               "
-              [class.text-gray-400]="selectedCategory?.name === 'Uncategorized'"
-              [class.text-red-500]="selectedCategory?.name !== 'Uncategorized'"
-              [disabled]="selectedCategory?.name === 'Uncategorized'"
+              [class.text-gray-400]="selectedCategory.name === 'Uncategorized'"
+              [class.text-red-500]="selectedCategory.name !== 'Uncategorized'"
+              [disabled]="selectedCategory.name === 'Uncategorized'"
               (click)="
-                confirmDeleteCategory(
-                  selectedCategory?.id,
-                  selectedCategory?.name ?? ''
-                )
+                selectedCategory &&
+                  confirmDeleteCategory(
+                    selectedCategory.id,
+                    selectedCategory.name
+                  )
               "
             >
               Delete Category
@@ -98,7 +99,7 @@
               *ngIf="selectedCategory?.name === 'Uncategorized'"
               class="text-xs text-yellow-500"
             >
-            Uncategorized should not be deleted.
+              Uncategorized should not be deleted.
             </span>
           </div>
         </div>
