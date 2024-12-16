@@ -47,18 +47,12 @@
           </div>
         </div>
 
-        <!-- Email Info -->
+        <!-- Bio Info -->
         <div class="text-center text-gray-600">
-          <p>Email:</p>
           <div class="flex items-center justify-center space-x-4">
             <p class="font-semibold">
-              {{ emailDisplay }}
+              {{ user?.bio || "Add a bio to your profile" }}
             </p>
-            <button
-              class="px-4 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
-              (click)="toggleEmail()"
-              [innerHTML]="revealButtonText"
-            ></button>
           </div>
         </div>
       </div>
@@ -73,6 +67,7 @@
         </button>
         <button
           class="w-full px-4 py-2 bg-red-100 text-red-500 rounded-xs hover:bg-red-200"
+          (click)="deleteAccount()"
         >
           Delete Account
         </button>
@@ -90,47 +85,41 @@
       <!-- Personal Details -->
       <div class="space-y-4">
         <div>
-          <p class="text-xs font-semibold text-gray-700">DISPLAY NAME</p>
+          <p class="text-sm font-semibold text-gray-700">Display Name</p>
           <p class="text-lg text-gray-600">{{ displayName }}</p>
         </div>
         <div>
-          <p class="text-xs font-semibold text-gray-700">USERNAME</p>
+          <p class="text-sm font-semibold text-gray-700">Username</p>
           <p class="text-lg text-gray-600">{{ user?.username }}</p>
         </div>
         <div>
-          <p class="text-xs font-semibold text-gray-700">Bio:</p>
-          <p class="text-lg text-gray-600">{{ user?.bio }}</p>
+          <p class="text-sm font-semibold text-gray-700">Email:</p>
+          <div class="flex flex-row space-x-2">
+            <p class="text-lg text-gray-600">{{ emailDisplay }}</p>
+            <button
+              class="px-2 py-0.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+              (click)="toggleEmail()"
+              [innerHTML]="revealButtonText"
+            ></button>
+          </div>
         </div>
         <div>
-          <p class="text-xs font-semibold text-gray-700">Phone Number:</p>
-          <p class="text-lg text-gray-600">{{ user?.phoneNumber }}</p>
+          <p class="text-sm font-semibold text-gray-700">Phone Number:</p>
+          <p class="text-lg text-gray-600">
+            {{ user?.phoneNumber || "Add a phone number!" }}
+          </p>
         </div>
       </div>
 
-      <!-- Notes Section -->
-      <!-- <div>
-        <p class="text-xs font-semibold text-gray-700 pb-1">Your Notes:</p>
-        <div class="space-y-4 h-64 overflow-y-auto">
-          <div class="bg-gray-100 p-4 rounded-xs shadow-sm">
-            <p class="text-gray-600">Note Title 1</p>
-          </div>
-          <div class="bg-gray-100 p-4 rounded-xs shadow-sm">
-            <p class="text-gray-600">Note Title 2</p>
-          </div>
-          <div class="bg-gray-100 p-4 rounded-xs shadow-sm">
-            <p class="text-gray-600">Note Title 3</p>
-          </div>
-          <div class="bg-gray-100 p-4 rounded-xs shadow-sm">
-            <p class="text-gray-600">Note Title 4</p>
-          </div>
-          <div class="bg-gray-100 p-4 rounded-xs shadow-sm">
-            <p class="text-gray-600">Note Title 5</p>
-          </div>
-        </div>
-      </div> -->
       <div>
-        <p class="text-xs font-semibold text-gray-700 pb-1">Your Notes:</p>
+        <p class="text-sm font-semibold text-gray-700 pb-1">Your Notes:</p>
         <div class="space-y-4 h-64 overflow-y-auto">
+          <div
+            *ngIf="filteredNotes.length === 0"
+            class="text-center text-gray-500"
+          >
+            <p>No notes available. Start adding some!</p>
+          </div>
           <div
             *ngFor="let note of filteredNotes"
             class="bg-gray-100 p-4 rounded-xs shadow-sm"
@@ -159,7 +148,7 @@
         <!-- Change Password Form -->
         <div class="space-y-3">
           <div>
-            <label class="block text-sm font-semibold text-gray-700"
+            <label class="block text-sm font-semibold text-gray-700" 
               >Old Password</label
             >
             <input

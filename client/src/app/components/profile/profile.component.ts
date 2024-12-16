@@ -114,7 +114,26 @@ export class ProfileComponent implements OnInit {
 
   saveChanges() {
     if (this.isChangingPassword) {
-      console.log('Change password logic here');
+      if (this.newPassword !== this.confirmNewPassword) {
+        alert('New password and confirmation do not match.');
+        return;
+      }
+
+      const passwords = {
+        oldPassword: this.oldPassword,
+        newPassword: this.newPassword,
+        confirmPassword: this.confirmNewPassword,
+      };
+
+      this.userService.changePassword(this.userId!, passwords).subscribe(
+        (response) => {
+          alert('Password changed successfully.');
+          this.logout(); // Force logout for security
+        },
+        (error) => {
+          alert('Error changing password: ' + error.message);
+        }
+      );
     } else {
       const updatedUser: User = {
         id: this.userId!,
@@ -127,16 +146,21 @@ export class ProfileComponent implements OnInit {
         password: '',
       };
 
+      if (this.user?.username !== this.username) {
+        alert(
+          'Your username has been updated. For security reasons, you need to log in again.'
+        );
+        this.logout();
+        return;
+      } else {
+        console.log('Username not changed');
+      }
+
       this.userService.updateUserProfile(this.userId!, updatedUser).subscribe(
         (updated) => {
           alert('Profile updated successfully');
           this.user = updated;
-
-          // Update localStorage with the new user data
-          localStorage.setItem('user', JSON.stringify(updated));
-
-          // Trigger a manual change detection to refresh the view
-          this.cdr.detectChanges();
+          window.location.reload();
         },
         (error) => alert('Error updating profile: ' + error.message)
       );
@@ -161,7 +185,29 @@ export class ProfileComponent implements OnInit {
         '<i class="fa fa-eye-slash" aria-hidden="true"></i>';
     } else {
       this.emailDisplay = this.censorEmail(this.rawEmail);
-      this.revealButtonText = 'Reveal';
+      this.revealButtonText = '<i class="fa fa-eye" aria-hidden="true"></i>';
+    }
+  }
+
+  deleteAccount() {
+    // Add a confirmation dialog
+    const confirmDelete = confirm(
+      'Are you sure you want to delete your account? This action cannot be undone.'
+    );
+
+    if (confirmDelete && this.userId) {
+      this.userService.deleteAccount(this.userId).subscribe(
+        (response) => {
+          // Handle successful deletion
+          alert('Your account has been deleted successfully.');
+          this.logout();
+        },
+        (error) => {
+          // Handle error
+          console.error('Error deleting account:', error);
+          alert('Failed to delete account. Please try again.');
+        }
+      );
     }
   }
 

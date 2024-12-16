@@ -28,12 +28,20 @@ public class AuthController {
     // Registration Endpoint
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Map<String, String> userRequest) {
+        String firstName = userRequest.get("firstName");
+        String lastName = userRequest.get("lastName");
         String username = userRequest.get("username");
         String email = userRequest.get("email");
         String password = userRequest.get("password");
         String confirmPassword = userRequest.get("confirmPassword");
 
         // Validate required fields
+        if (firstName == null || firstName.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "First name is required!"));
+        }
+        if (lastName == null || lastName.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Last name is required!"));
+        }
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email is required!"));
         }
@@ -61,6 +69,8 @@ public class AuthController {
 
         // Save user with encoded password
         User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));

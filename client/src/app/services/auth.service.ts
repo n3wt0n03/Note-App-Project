@@ -12,21 +12,31 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   // Method to register a new user
-  register(user: { username: string; email: string; password: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, user, this.getHttpOptions()).pipe(
-      catchError(this.handleError) // Error handling
-    );
+  register(user: {
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    password: string;
+  }): Observable<any> {
+    return this.http
+      .post(`${this.apiUrl}/register`, user, this.getHttpOptions())
+      .pipe(
+        catchError(this.handleError) // Error handling
+      );
   }
 
   // Method to log in a user
   login(user: { email: string; password: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, user, this.getHttpOptions()).pipe(
-      tap({
-        next: (response) => console.log('Login Response:', response),
-        error: (error) => console.log('Login Error:', error),
-      }),
-      catchError(this.handleError) // Error handling
-    );
+    return this.http
+      .post(`${this.apiUrl}/login`, user, this.getHttpOptions())
+      .pipe(
+        tap({
+          next: (response) => console.log('Login Response:', response),
+          error: (error) => console.log('Login Error:', error),
+        }),
+        catchError(this.handleError) // Error handling
+      );
   }
 
   // Save token to localStorage
@@ -67,5 +77,3 @@ export class AuthService {
     return throwError(() => error);
   }
 }
-
-

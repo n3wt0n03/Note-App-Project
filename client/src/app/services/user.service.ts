@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, map } from 'rxjs/operators';
 import { User } from '../model/user.model';
+
 
 @Injectable({
   providedIn: 'root',
@@ -25,6 +26,20 @@ export class UserService {
   getUserProfile(userId: number): Observable<User> {
     return this.http
       .get<User>(`${this.apiUrl}/${userId}`, { headers: this.getHeaders() })
+      .pipe(catchError(this.handleError));
+  }
+
+  // Delete user account
+  deleteAccount(userId: number): Observable<any> {
+    return this.http
+      .delete(`${this.apiUrl}/${userId}`, { headers: this.getHeaders() })
+      .pipe(catchError(this.handleError));
+  }
+
+  // Change user password
+  changePassword(userId: number, passwords: { oldPassword: string, newPassword: string, confirmPassword: string }): Observable<any> {
+    return this.http
+      .put(`${this.apiUrl}/${userId}/change-password`, passwords, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
   }
 
