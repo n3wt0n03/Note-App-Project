@@ -3,11 +3,14 @@
   <div class="shadow-md border-b-2 p-4 flex justify-between items-center sticky top-0 z-10"
        [ngClass]="{'bg-white border-gray-300': !isDarkMode, 'bg-gray-800 border-gray-700': isDarkMode}">
     <div class="flex space-x-4 items-center">
-      <span class="font-bold text-lg" [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">Notes App</span>
-      <input type="text" placeholder="Search notes..." 
-             class="p-2 border rounded w-64 focus:outline-none"
-             [ngClass]="{'bg-white text-gray-800': !isDarkMode, 'bg-gray-700 text-gray-200': isDarkMode}"
-             [(ngModel)]="searchTerm" (input)="filterNotes()" />
+      <span class="font-bold text-lg">NoteWorthy</span>
+      <input
+        type="text"
+        placeholder="Search notes..."
+        class="p-2 border rounded w-64 focus:outline-none focus:ring focus:ring-blue-200"
+        [(ngModel)]="searchTerm"
+        (input)="filterNotes()"
+      />
     </div>
     <div class="flex space-x-4 items-center">
       <select class="p-2 border rounded focus:outline-none focus:ring focus:ring-blue-200"
@@ -24,48 +27,69 @@
   </div>
 
   <!-- Notes Section -->
-  <div class="flex-grow py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-       [ngClass]="{'bg-blue-50': !isDarkMode, 'bg-gray-800': isDarkMode}">
-    <div *ngFor="let note of filteredNotes" 
-         class="shadow-md rounded-lg p-4 relative flex flex-col hover:shadow-lg cursor-pointer"
-         [ngClass]="{'bg-white': !isDarkMode, 'bg-gray-700': isDarkMode}"
-         style="height: 200px" (click)="openViewModal(note)">
-      <button class="absolute top-2 right-2 hover:text-blue-700"
-              [ngClass]="{'text-blue-500': !isDarkMode, 'text-blue-300': isDarkMode}"
-              (click)="openEditNoteModal(note); $event.stopPropagation()">
+  <div
+    class="bg-blue-50 flex-grow py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+  >
+    <div
+      *ngFor="let note of filteredNotes"
+      [ngStyle]="{ backgroundColor: note.color || '#ffffff' }"
+      class="bg-white shadow-md rounded-lg p-4 relative flex flex-col hover:shadow-lg cursor-pointer"
+      style="height: 200px"
+      (click)="openViewModal(note)"
+    >
+      <!-- Edit Button -->
+      <button
+        class="absolute top-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-black text-white hover:bg-gray-600"
+        (click)="openEditNoteModal(note); $event.stopPropagation()"
+      >
         <i class="fa-solid fa-pen"></i>
       </button>
+
       <h3 class="font-bold text-lg mb-1 truncate"
           [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">
         {{ note.title }}
       </h3>
       <p class="text-sm italic mb-3 truncate"
          [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">
-        {{ note.category }}
+        {{ getCategoryNameById(note.category) }}
       </p>
-      <p [innerHTML]="getSanitizedDescription(note.description)" 
-         class="text-sm overflow-hidden break-words whitespace-normal"
-         [ngClass]="{'text-gray-700': !isDarkMode, 'text-gray-300': isDarkMode}"
-         style="display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis;">
-      </p>
-      <div class="flex justify-between items-center text-sm mt-auto"
-           [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">
-        <p>{{ note.date }}</p>
-        <button class="hover:underline min-w-[60px] text-center"
-                [ngClass]="{'text-red-500': !isDarkMode, 'text-red-400': isDarkMode}"
-                (click)="openDeleteModal(note); $event.stopPropagation()">
-          Delete
+
+      <p
+        [innerHTML]="getSanitizedDescription(note.description)"
+        class="text-gray-700 text-sm overflow-hidden break-words whitespace-normal"
+        style="
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        "
+      ></p>
+
+      <!-- Delete Button -->
+
+      <div class="flex justify-between items-center text-sm mt-auto">
+        <p class="flex items-center text-blue-500">
+          <i class="fa-solid fa-calendar-alt mr-1 text-blue-600"></i>
+          {{ note.date }}
+        </p>
+        <button
+          class="absolute bottom-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-white text-black hover:bg-gray-200 border border-gray-300"
+          (click)="openDeleteModal(note); $event.stopPropagation()"
+        >
+          <i class="fa-solid fa-trash"></i>
         </button>
       </div>
     </div>
   </div>
-
   <!-- Modal -->
   <div *ngIf="isModalOpen" class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-20">
     <div class="rounded-lg p-6 w-full max-w-lg shadow-lg"
          [ngClass]="{'bg-white': !isDarkMode, 'bg-gray-800': isDarkMode}">
       <h2 class="text-3xl font-bold mb-4"
-          [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">New Note</h2>
+          [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">
+        {{ isEditing ? "Edit Note" : "New Note" }}
+      </h2>
       <form>
         <!-- Title Input -->
         <label for="title" class="block text-xl font-bold mb-2"
@@ -74,68 +98,29 @@
                class="w-full p-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                [ngClass]="{'bg-white text-gray-800': !isDarkMode, 'bg-gray-700 text-gray-200': isDarkMode}" />
 
-        <!-- Task Dropdown -->
+        <!-- Category Dropdown -->
         <label for="task" class="block text-xl font-bold mb-2"
                [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">Category</label>
         <select id="task" [(ngModel)]="currentNote.category" name="category"
                 class="w-full p-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                 [ngClass]="{'bg-white text-gray-800': !isDarkMode, 'bg-gray-700 text-gray-200': isDarkMode}">
-          <option value="" disabled selected>Select a task</option>
-          <option value="Study">Study</option>
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
+          <option value="" disabled>Select a category</option>
+          <option *ngFor="let category of categories" [ngValue]="category">
+            {{ category.name }}
+          </option>
         </select>
 
         <!-- Note Textarea -->
-        <label for="note" class="block text-xl font-bold mb-2"
-               [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">Note</label>
-        <div id="note" 
-             class="w-full h-36 p-3 border rounded-md shadow-sm text-sm overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-             [ngClass]="{'bg-white text-gray-800': !isDarkMode, 'bg-gray-700 text-gray-200': isDarkMode}"
-             contenteditable="true" notesEditableValue [(ngModel)]="currentNote.description" name="description"
-             [ngStyle]="{ backgroundColor: noteColor }"></div>
-
-<!-- Toolbar -->
-<div class="flex gap-2 mb-4">
-  <button type="button" (click)="applyFormatting('bold')" 
-    [ngClass]="{ 'bg-blue-500 text-white': isActive('bold'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('bold'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('bold') }" 
-    class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-    <b>B</b>
-  </button>
-  <button type="button" (click)="applyFormatting('italic')" 
-    [ngClass]="{ 'bg-blue-500 text-white': isActive('italic'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('italic'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('italic') }" 
-    class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-    <i>I</i>
-  </button>
-  <button type="button" (click)="applyFormatting('underline')" 
-    [ngClass]="{ 'bg-blue-500 text-white': isActive('underline'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('underline'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('underline') }" 
-    class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-    <u>U</u>
-  </button>
-  <button type="button" (click)="applyFormatting('strikethrough')" 
-    [ngClass]="{ 'bg-blue-500 text-white': isActive('strikethrough'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('strikethrough'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('strikethrough') }" 
-    class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-    S
-  </button>
-  <div class="ml-auto flex gap-2">
-    <button type="button" (click)="applyFormatting('justifyLeft')" 
-      [ngClass]="{ 'bg-blue-500 text-white': isActive('justifyLeft'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('justifyLeft'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('justifyLeft') }" 
-      class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-      Left
-    </button>
-    <button type="button" (click)="applyFormatting('justifyCenter')" 
-      [ngClass]="{ 'bg-blue-500 text-white': isActive('justifyCenter'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('justifyCenter'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('justifyCenter') }" 
-      class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-      Center
-    </button>
-    <button type="button" (click)="applyFormatting('justifyRight')" 
-      [ngClass]="{ 'bg-blue-500 text-white': isActive('justifyRight'), 'bg-gray-200 text-gray-700': !isDarkMode && !isActive('justifyRight'), 'bg-gray-700 text-gray-300': isDarkMode && !isActive('justifyRight') }" 
-      class="px-2 py-1 border rounded-md text-sm hover:bg-opacity-80">
-      Right
-    </button>
-  </div>
-</div>
-
+        <label for="note" class="block text-xl font-bold mb-2">Note</label>
+        <div
+          id="note"
+          class="w-full h-36 p-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          contenteditable="true"
+          notesEditableValue
+          [(ngModel)]="currentNote.description"
+          name="description"
+          [ngStyle]="{ backgroundColor: noteColor }"
+        ></div>
 
         <!-- Color Picker -->
         <div class="mb-4">
@@ -150,8 +135,18 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
-        <div class="flex justify-end">
+        <!-- Buttons -->
+        <div class="flex justify-end gap-4">
+          <!-- Cancel Button -->
+          <button
+            type="button"
+            class="bg-red-500 text-black px-4 py-2 rounded-md shadow hover:bg-gray-400"
+            (click)="closeModal()"
+          >
+            Cancel
+          </button>
+
+          <!-- Save Button -->
           <button type="button" 
                   class="bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
                   (click)="saveNote()">
@@ -171,7 +166,7 @@
             [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">{{ selectedNote?.title }}</h2>
         <p class="text-sm italic mb-4"
            [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">
-          {{ selectedNote?.category }}
+          {{ getCategoryNameById(selectedNote?.category ?? null) }}
         </p>
         <div class="text-base whitespace-pre-wrap break-words"
              [ngClass]="{'text-gray-700': !isDarkMode, 'text-gray-300': isDarkMode}"
@@ -179,6 +174,7 @@
         <p class="text-sm mt-4"
            [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">Date: {{ selectedNote?.date }}</p>
       </div>
+
       <div class="flex justify-start mt-4">
         <button type="button" 
                 class="px-4 py-2 rounded hover:bg-gray-400 focus:outline-none focus:ring"

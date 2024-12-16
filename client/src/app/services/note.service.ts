@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Note } from '../model/note.model'; // Ensure the correct path to your Note model
+import { Note } from '../model/note.model';
+import { Category } from '../model/category.model'; // Ensure the correct path to your Category model
 
 @Injectable({
   providedIn: 'root',
 })
 export class NoteService {
   private apiUrl = 'http://localhost:8080/api/notes';
+  private categoriesUrl = 'http://localhost:8080/api/categories'; // URL for categories endpoint
 
   constructor(private http: HttpClient) {}
 
@@ -41,6 +43,21 @@ export class NoteService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
       .pipe(catchError(this.handleError));
   }
+
+  // Fetch all categories
+  getCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(this.categoriesUrl, { headers: this.getHeaders() })
+      .pipe(catchError(this.handleError));
+  }
+
+  getNotesByCategoryId(categoryId: number): Observable<Note[]> {
+    return this.http
+      .get<Note[]>(`${this.apiUrl}?categoryId=${categoryId}`, {
+        headers: this.getHeaders(),
+      })
+      .pipe(catchError(this.handleError));
+  }
+
 
   // Helper method to get headers with token
   private getHeaders(): HttpHeaders {

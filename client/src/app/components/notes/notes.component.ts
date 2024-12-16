@@ -2,8 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
+import { CategoryService } from '../../services/category.service'; // Added CategoryService
 import { ThemeService } from '../../services/theme.service';
 import { Note } from '../../model/note.model';
+import { Category } from '../../model/category.model';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { NotesEditableValueDirective } from './notes-editable-value.directive';
 import { Subscription } from 'rxjs';
@@ -17,6 +20,7 @@ import { Subscription } from 'rxjs';
 export class NotesComponent implements OnInit, OnDestroy {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
+  categories: Category[] = []; // Store fetched categories
   searchTerm: string = '';
   sortOrder: string = 'latest';
   isModalOpen = false;
@@ -27,18 +31,29 @@ export class NotesComponent implements OnInit, OnDestroy {
   selectedNote: Note | null = null;
   noteToDelete: Note | null = null;
   noteColor: string = '#ffffff';
-  predefinedColors: string[] = ['#ffffff', '#fef3c7', '#e0f7fa', '#e1bee7'];
+  predefinedColors: string[] = [
+    '#ffffff',
+    '#08b6db',
+    '#daae61',
+    '#c3ce7b',
+    '#e1bee7',
+  ];
 
   currentNote: Note = this.createEmptyNote();
   themeSubscription!: Subscription;
   isDarkMode!: boolean;
 
   constructor(
-    private noteService: NoteService, 
-    private sanitizer: DomSanitizer,
+    
+    private noteService: NoteService,
+    private categoryService: CategoryService, // Injected CategoryService
+    
+    private sanitizer: DomSanitizer
+  ,
     private themeService: ThemeService
   ) {
     this.loadNotes();
+    this.loadCategories(); // Fetch categories when the component initializes
   }
   ngOnInit() {
     this.themeSubscription = this.themeService.darkMode$.subscribe(
@@ -57,10 +72,27 @@ export class NotesComponent implements OnInit, OnDestroy {
         this.notes = data;
         this.filteredNotes = [...this.notes];
       },
-      error: (error) => {
-        console.error('Failed to load notes', error);
-      },
+      error: (error) => console.error('Failed to load notes', error),
     });
+  }
+
+  loadCategories(): void {
+    this.categoryService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => console.error('Failed to load categories', error),
+    });
+  }
+  getCategoryNameById(category: Category | { id: number } | null): string {
+    if (!category) {
+      return 'Uncategorized';
+    }
+    if ('name' in category) {
+      return category.name;
+    }
+    const categoryData = this.categories.find((cat) => cat.id === category.id);
+    return categoryData ? categoryData.name : 'Uncategorized';
   }
 
   openAddNoteModal(): void {
@@ -75,6 +107,12 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.editNoteId = note.id ?? null;
     this.currentNote = { ...note };
     this.noteColor = note.color ?? '#ffffff';
+
+    if (this.currentNote.category && 'id' in this.currentNote.category) {
+      const categoryId = (this.currentNote.category as { id: number }).id;
+      this.currentNote.category =
+        this.categories.find((category) => category.id === categoryId) || null;
+    }
     this.isModalOpen = true;
   }
 
@@ -109,6 +147,7 @@ export class NotesComponent implements OnInit, OnDestroy {
       const idToDelete = this.noteToDelete.id;
       this.noteService.deleteNote(idToDelete).subscribe({
         next: () => {
+          // Remove the deleted note from the local arrays
           this.notes = this.notes.filter((note) => note.id !== idToDelete);
           this.filteredNotes = this.filteredNotes.filter(
             (note) => note.id !== idToDelete
@@ -116,8 +155,8 @@ export class NotesComponent implements OnInit, OnDestroy {
           this.closeDeleteModal();
         },
         error: (error) => {
-          console.error('Failed to delete note', error);
-          alert('Failed to delete note: ' + (error.message || 'Unknown error'));
+          console.error('Failed to delete note:', error);
+          alert('Failed to delete note. Please try again.');
           this.closeDeleteModal();
         },
       });
@@ -125,13 +164,13 @@ export class NotesComponent implements OnInit, OnDestroy {
   }
 
   saveNote(): void {
-    const noteToSave = {
-      ...this.currentNote,
-      color: this.noteColor,
-    };
+    this.currentNote.color = this.noteColor;
+    this.currentNote.category = this.currentNote.category
+      ? ({ id: this.currentNote.category.id } as Category)
+      : null;
 
     if (this.isEditing && this.editNoteId !== null) {
-      this.noteService.updateNote(this.editNoteId, noteToSave).subscribe({
+      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
         next: () => {
           this.loadNotes();
           this.closeModal();
@@ -139,7 +178,7 @@ export class NotesComponent implements OnInit, OnDestroy {
         error: (error) => console.error('Failed to update note', error),
       });
     } else {
-      const newNote = { ...noteToSave, id: undefined };
+      const newNote = { ...this.currentNote, id: undefined };
       this.noteService.createNote(newNote).subscribe({
         next: () => {
           this.loadNotes();
@@ -184,7 +223,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     return {
       id: 0,
       title: '',
-      category: 'Study',
+      category: null,
       description: '',
       date: new Date().toISOString().split('T')[0],
       color: '#ffffff',
