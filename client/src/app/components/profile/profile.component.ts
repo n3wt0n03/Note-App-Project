@@ -21,38 +21,42 @@ export class ProfileComponent implements OnInit {
   isChangingPassword = false;
   modalTitle = '';
 
-  //Email toggle
   rawEmail: string = '';
   emailDisplay: string = '';
   revealButtonText: string = '<i class="fa fa-eye" aria-hidden="true"></i>';
 
-  // Password Fields
   oldPassword = '';
   newPassword = '';
   confirmNewPassword = '';
 
-  // Bio fields
   displayName = '';
   username = '';
   bio = '';
   phoneNumber = '';
 
+  isDarkMode: boolean = false;
+  private themeSubscription: Subscription;
+
   constructor(
     private userService: UserService,
     private noteService: NoteService,
     private cdr: ChangeDetectorRef,
-    private router: Router
-  ) {}
+    private router: Router,
+    private themeService: ThemeService
+  ) {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
 
   ngOnInit(): void {
-    // Retrieve user data from local storage
     const userData = localStorage.getItem('user');
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData); // Parse the JSON string
-        this.userId = parsedUser.id; // Extract and assign the user ID
-        this.fetchUserProfile(); // Fetch the user profile
-        this.fetchUserNotes(); // Fetch the user's notes
+        const parsedUser = JSON.parse(userData);
+        this.userId = parsedUser.id;
+        this.fetchUserProfile();
+        this.fetchUserNotes();
       } catch (error) {
         console.error('Failed to parse user data from localStorage:', error);
       }
@@ -61,18 +65,26 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  // Fetch all notes for the authenticated user
+  ngOnDestroy() {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
+
+  toggleDarkMode() {
+    this.themeService.toggleDarkMode();
+  }
+
   fetchUserNotes(): void {
     if (this.userId === null) {
       console.error('User ID is not available for fetching notes');
       return;
     }
 
-    // Fetch all notes for the authenticated user
     this.noteService.getNotes().subscribe(
       (notes) => {
         this.notes = notes;
-        this.sortNotesByDate(); // Sort the notes by latest
+        this.sortNotesByDate();
       },
       (error) => console.error('Failed to fetch user notes:', error)
     );
@@ -98,15 +110,15 @@ export class ProfileComponent implements OnInit {
   }
 
   sortNotesByDate(): void {
-    // Sort notes by date in descending order (latest first)
     this.notes.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    this.filteredNotes = [...this.notes]; // Copy to filteredNotes
+    this.filteredNotes = [...this.notes];
   }
 
   censorEmail(email: string): string {
     const [localPart, domain] = email.split('@');
+    const maskedLocal = '*'.repeat(localPart.length);
     const maskedLocal = '*'.repeat(localPart.length);
     return `${maskedLocal}@${domain}`;
   }
@@ -130,11 +142,7 @@ export class ProfileComponent implements OnInit {
         (updated) => {
           alert('Profile updated successfully');
           this.user = updated;
-
-          // Update localStorage with the new user data
           localStorage.setItem('user', JSON.stringify(updated));
-
-          // Trigger a manual change detection to refresh the view
           this.cdr.detectChanges();
         },
         (error) => alert('Error updating profile: ' + error.message)

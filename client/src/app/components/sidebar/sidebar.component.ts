@@ -21,7 +21,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   isDarkMode: boolean = false;
   private themeSubscription!: Subscription;
 
-  constructor(private router: Router, private userService: UserService) {
+  constructor(
+    private router: Router, 
+    private userService: UserService,
+    private themeService: ThemeService
+  ) {
     this.displayName = '';
   }
 
@@ -29,14 +33,24 @@ export class SidebarComponent implements OnInit, OnDestroy {
     const userData = localStorage.getItem('user');
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData); // Parse the JSON string
-        this.userId = parsedUser.id; // Extract and assign the user ID
-        this.fetchUserProfile(); // Fetch the user profile
+        const parsedUser = JSON.parse(userData);
+        this.userId = parsedUser.id;
+        this.fetchUserProfile();
       } catch (error) {
         console.error('Failed to parse user data from localStorage:', error);
       }
     } else {
       console.error('No user data found in localStorage');
+    }
+
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
+
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
@@ -71,6 +85,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   expandSidebar(expand: boolean): void {
     this.isExpanded = expand;
+  }
+
+  toggleDarkMode(): void {
+    this.themeService.toggleDarkMode();
   }
 
   logout(): void {

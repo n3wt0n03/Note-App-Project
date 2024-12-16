@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -8,36 +8,50 @@ import {
 } from '@angular/cdk/drag-drop';
 import { CategoryService } from '../../services/category.service';
 import { NoteService } from '../../services/note.service';
+import { ThemeService } from '../../services/theme.service';
 import { Category } from '../../model/category.model';
 import { Note } from '../../model/note.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-categories',
-  standalone: true, // Make it standalone
-  imports: [CommonModule, FormsModule, DragDropModule], // Import DragDropModule
+  standalone: true,
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './categories.component.html',
 })
-export class CategoriesComponent implements OnInit {
-  categories: Category[] = []; // List of categories
-  notes: Note[] = []; // Notes for the selected category
-  isCategoryModalOpen = false; // Modal visibility state
-  isDeleteConfirmationOpen = false; // Delete confirmation modal visibility state
-  isSettingsOpen = false; // Settings modal visibility state
+export class CategoriesComponent implements OnInit, OnDestroy {
+  categories: Category[] = [];
+  notes: Note[] = [];
+  isCategoryModalOpen = false;
+  isDeleteConfirmationOpen = false;
+  isSettingsOpen = false;
   currentCategory: Category = this.createEmptyCategory();
-  selectedCategory: Category | null = null; // Currently selected category
-  categoryToDeleteId: number | null = null; // ID of the category to delete
-  categoryErrorMessage: string | null = null; // Variable to store error message
+  selectedCategory: Category | null = null;
+  categoryToDeleteId: number | null = null;
+  categoryErrorMessage: string | null = null;
+  isDarkMode: boolean = false;
+  private themeSubscription: Subscription;
 
   constructor(
     private categoryService: CategoryService,
-    private noteService: NoteService
-  ) {}
+    private noteService: NoteService,
+    private themeService: ThemeService
+  ) {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
 
   ngOnInit(): void {
     this.loadCategories();
   }
 
-  // Load all categories
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
+
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
       next: (data) => {
@@ -49,21 +63,18 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
-  // Select a category and load its notes
   selectCategory(category: Category): void {
     this.selectedCategory = category;
     if (category.id !== undefined && category.id !== null) {
       this.loadNotes(category.id);
     } else {
-      this.notes = []; // Clear notes if category ID is invalid
+      this.notes = [];
     }
   }
 
-  // Load notes for a specific category
   loadNotes(categoryId: number): void {
     this.noteService.getNotesByCategoryId(categoryId).subscribe({
       next: (data) => {
-        // Extract 'id' from 'category' for comparison
         this.notes = data.filter((note) => {
           const category = note.category;
           return (
@@ -77,36 +88,31 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
-  // Open modal for adding a new category
   openAddCategoryModal(): void {
     this.categoryErrorMessage = null;
     this.currentCategory = this.createEmptyCategory();
     this.isCategoryModalOpen = true;
   }
 
-  // Open modal for editing an existing category
   editCategory(category: Category | null): void {
     this.categoryErrorMessage = null;
     if (!category) {
       console.error('No category selected for editing.');
       return;
     }
-    this.currentCategory = { ...category }; // Clone the category to avoid mutating directly
+    this.currentCategory = { ...category };
     this.isCategoryModalOpen = true;
-    this.isSettingsOpen = false; // Close settings modal
+    this.isSettingsOpen = false;
   }
 
-  // Close the category modal
   closeCategoryModal(): void {
     this.isCategoryModalOpen = false;
   }
 
-  // Toggle settings modal
   toggleSettings(): void {
     this.isSettingsOpen = !this.isSettingsOpen;
   }
 
-  // Open delete confirmation modal
   confirmDeleteCategory(
     id: number | null | undefined,
     categoryName: string
@@ -125,16 +131,14 @@ export class CategoriesComponent implements OnInit {
 
     this.categoryToDeleteId = id;
     this.isDeleteConfirmationOpen = true;
-    this.isSettingsOpen = false; // Close settings modal
+    this.isSettingsOpen = false;
   }
 
-  // Close delete confirmation modal
   closeDeleteConfirmation(): void {
     this.isDeleteConfirmationOpen = false;
     this.categoryToDeleteId = null;
   }
 
-  // Confirm deletion of a category
   confirmDelete(): void {
     if (this.categoryToDeleteId == null) {
       console.error('No category ID set for deletion.');
@@ -154,12 +158,10 @@ export class CategoriesComponent implements OnInit {
     });
   }
 
-  // Save a new or updated category
   saveCategory(): void {
-    this.categoryErrorMessage = null; // Clear previous errors
+    this.categoryErrorMessage = null;
 
     if (this.currentCategory.id) {
-      // Update existing category
       this.categoryService
         .updateCategory(this.currentCategory.id, this.currentCategory)
         .subscribe({
@@ -174,7 +176,6 @@ export class CategoriesComponent implements OnInit {
           },
         });
     } else {
-      // Create a new category
       this.categoryService.createCategory(this.currentCategory).subscribe({
         next: () => {
           this.loadCategories();
@@ -189,22 +190,18 @@ export class CategoriesComponent implements OnInit {
     }
   }
 
-  // Handle drag-and-drop to reorder categories
   onDrop(event: CdkDragDrop<Category[]>): void {
     moveItemInArray(this.categories, event.previousIndex, event.currentIndex);
 
-    // Extract ordered category IDs
     const orderedCategoryIds: number[] = this.categories
       .filter((category) => category.id !== null)
       .map((category) => category.id as number);
 
-    // Send updated order to backend
     this.categoryService.reorderCategories(orderedCategoryIds).subscribe({
       error: (err) => console.error('Failed to reorder categories:', err),
     });
   }
 
-  // Create an empty category object
   private createEmptyCategory(): Category {
     return {
       id: null,
@@ -213,12 +210,15 @@ export class CategoriesComponent implements OnInit {
     };
   }
 
-  // Utility function to determine contrast color for text
   getContrastColor(hexColor: string): string {
     const r = parseInt(hexColor.slice(1, 3), 16);
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     return brightness > 125 ? '#000000' : '#ffffff';
+  }
+
+  toggleDarkMode(): void {
+    this.themeService.toggleDarkMode();
   }
 }

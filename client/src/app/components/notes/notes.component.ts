@@ -41,7 +41,6 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   currentNote: Note = this.createEmptyNote();
   themeSubscription!: Subscription;
-  isDarkMode!: boolean;
 
   constructor(
     
@@ -53,7 +52,6 @@ export class NotesComponent implements OnInit, OnDestroy {
     private themeService: ThemeService
   ) {
     this.loadNotes();
-    this.loadCategories(); // Fetch categories when the component initializes
   }
   ngOnInit() {
     this.themeSubscription = this.themeService.darkMode$.subscribe(
