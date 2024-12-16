@@ -7,6 +7,8 @@ import { NoteService } from '../../services/note.service';
 import { User } from '../../model/user.model';
 import { Note } from '../../model/note.model';
 import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
+
 @Component({
   selector: 'app-profile',
   imports: [CommonModule, FormsModule],
@@ -118,7 +120,6 @@ export class ProfileComponent implements OnInit {
 
   censorEmail(email: string): string {
     const [localPart, domain] = email.split('@');
-    const maskedLocal = '*'.repeat(localPart.length);
     const maskedLocal = '*'.repeat(localPart.length);
     return `${maskedLocal}@${domain}`;
   }

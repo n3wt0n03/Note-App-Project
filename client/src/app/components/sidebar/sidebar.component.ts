@@ -54,12 +54,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    if (this.themeSubscription) {
-      this.themeSubscription.unsubscribe();
-    }
-  }
-
   fetchUserProfile() {
     if (this.userId === null) {
       console.error('User ID is not available');
