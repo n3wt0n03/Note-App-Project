@@ -13,7 +13,7 @@ import { Subscription } from 'rxjs';
   imports: [RouterModule, CommonModule],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent implements OnInit, OnDestroy implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   user: User | null = null;
   userId: number | null = null;
   isExpanded: boolean = false;
@@ -37,6 +37,12 @@ export class SidebarComponent implements OnInit, OnDestroy implements OnInit {
       }
     } else {
       console.error('No user data found in localStorage');
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
