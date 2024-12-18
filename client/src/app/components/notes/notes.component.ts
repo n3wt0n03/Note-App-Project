@@ -41,6 +41,7 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   currentNote: Note = this.createEmptyNote();
   themeSubscription!: Subscription;
+  isDarkMode!: boolean;
 
   constructor(
     
