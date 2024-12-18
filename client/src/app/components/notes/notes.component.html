@@ -29,6 +29,7 @@
   <!-- Notes Section -->
   <div
     class="bg-blue-50 flex-grow py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+    [ngClass]="{'bg-blue-50': !isDarkMode, 'bg-gray-800': isDarkMode}"
   >
     <div
       *ngFor="let note of filteredNotes"
