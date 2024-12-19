@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { last } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -12,11 +13,16 @@ import { RouterModule } from '@angular/router';
   templateUrl: './register.component.html',
 })
 export class RegisterComponent implements OnInit {
+  firstName: string = '';
+  lastName: string = '';
   username: string = '';
   email: string = '';
   password: string = '';
   confirmPassword: string = '';
   message: string = '';
+
+  firstNameError: string = '';
+  lastNameError: string = '';
   usernameError: string = '';
   emailError: string = '';
   passwordError: string = '';
@@ -45,12 +51,20 @@ export class RegisterComponent implements OnInit {
   }
 
   onRegister(): void {
+    this.firstNameError = '';
+    this.lastNameError = '';
     this.usernameError = '';
     this.emailError = '';
     this.passwordError = '';
     this.message = '';
 
     // Frontend Validation
+    if (!this.firstName) {
+      this.firstNameError = 'First name is required.';
+    }
+    if (!this.lastName) {
+      this.lastNameError = 'Last name is required.';
+    }
     if (!this.username) {
       this.usernameError = 'Username is required.';
     }
@@ -70,11 +84,19 @@ export class RegisterComponent implements OnInit {
       this.passwordError = 'Passwords do not match.';
     }
 
-    if (this.usernameError || this.emailError || this.passwordError) {
+    if (
+      this.firstNameError ||
+      this.lastNameError ||
+      this.usernameError ||
+      this.emailError ||
+      this.passwordError
+    ) {
       return;
     }
 
     const user = {
+      firstName: this.firstName,
+      lastName: this.lastName,
       username: this.username,
       email: this.email,
       password: this.password,
@@ -86,7 +108,7 @@ export class RegisterComponent implements OnInit {
         this.message = 'Registration successful! Redirecting...';
         this.isSubmitting = false;
 
-          this.router.navigate(['/dashboard']);
+        this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.isSubmitting = false;
