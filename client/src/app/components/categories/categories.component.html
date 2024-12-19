@@ -116,7 +116,11 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngIf="notes?.length === 0" class="text-center py-8 text-gray-500">
+      <p>No notes in this category yet</p>
+    </div>
+
+    <div *ngIf="notes && notes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       <div
         *ngFor="let note of notes"
         class="p-4 rounded-lg shadow hover:shadow-lg"

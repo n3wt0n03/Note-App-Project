@@ -46,10 +46,7 @@
           [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">
         {{ note.title }}
       </h3>
-      <p class="text-sm italic mb-3 truncate"
-         [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">
-        {{ note.category }}
-      </p>
+      <div class="category">{{ getCategoryNameById(note.category) }}</div>
       <p [innerHTML]="getSanitizedDescription(note.description)" 
          class="text-sm overflow-hidden break-words whitespace-normal"
          [ngClass]="{'text-gray-700': !isDarkMode, 'text-gray-300': isDarkMode}"
@@ -87,10 +84,9 @@
         <select id="task" [(ngModel)]="currentNote.category" name="category"
                 class="w-full p-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                 [ngClass]="{'bg-white text-gray-800': !isDarkMode, 'bg-gray-700 text-gray-200': isDarkMode}">
-          <option value="" disabled selected>Select a task</option>
-          <option value="Study">Study</option>
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
+          <option *ngFor="let category of categories" [ngValue]="category">
+            {{category.name}}
+          </option>
         </select>
 
         <!-- Note Textarea -->
@@ -145,7 +141,7 @@
             [ngClass]="{'text-gray-800': !isDarkMode, 'text-gray-200': isDarkMode}">{{ selectedNote?.title }}</h2>
         <p class="text-sm italic mb-4"
            [ngClass]="{'text-gray-500': !isDarkMode, 'text-gray-400': isDarkMode}">
-          {{ selectedNote?.category }}
+          {{ selectedNote?.category ? getCategoryNameById(selectedNote!.category) : '' }}
         </p>
         <div class="text-base whitespace-pre-wrap break-words"
              [ngClass]="{'text-gray-700': !isDarkMode, 'text-gray-300': isDarkMode}"

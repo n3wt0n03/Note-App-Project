@@ -44,6 +44,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadNotes();
   }
 
   ngOnDestroy(): void {
@@ -72,20 +73,24 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadNotes(categoryId: number): void {
-    this.noteService.getNotesByCategoryId(categoryId).subscribe({
-      next: (data) => {
-        this.notes = data.filter((note) => {
-          const category = note.category;
-          return (
-            category !== null &&
-            (typeof category === 'number' ? category : category.id) ===
-              categoryId
-          );
-        });
-      },
-      error: (err) => console.error('Failed to load notes:', err),
-    });
+  loadNotes(categoryId?: number): void {
+    if (categoryId) {
+      this.noteService.getNotesByCategoryId(categoryId).subscribe({
+        next: (data) => {
+          this.notes = data.filter((note) => {
+            const category = note.category;
+            return category !== null && 
+              (typeof category === 'number' ? category : category.id) === categoryId;
+          });
+        },
+        error: (err) => console.error('Failed to load notes:', err),
+      });
+    } else {
+      this.noteService.getNotes().subscribe({
+        next: (notes) => this.notes = notes,
+        error: (err) => console.error('Error loading notes:', err)
+      });
+    }
   }
 
   openAddCategoryModal(): void {
