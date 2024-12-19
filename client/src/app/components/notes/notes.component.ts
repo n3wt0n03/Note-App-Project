@@ -1,13 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoteService } from '../../services/note.service';
 import { CategoryService } from '../../services/category.service'; // Added CategoryService
+import { ThemeService } from '../../services/theme.service';
 import { Note } from '../../model/note.model';
 import { Category } from '../../model/category.model';
 
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { NotesEditableValueDirective } from './notes-editable-value.directive';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notes',
@@ -15,7 +17,7 @@ import { NotesEditableValueDirective } from './notes-editable-value.directive';
   imports: [CommonModule, FormsModule, NotesEditableValueDirective],
   templateUrl: './notes.component.html',
 })
-export class NotesComponent {
+export class NotesComponent implements OnInit, OnDestroy {
   notes: Note[] = [];
   filteredNotes: Note[] = [];
   categories: Category[] = []; // Store fetched categories
@@ -38,16 +40,32 @@ export class NotesComponent {
   ];
 
   currentNote: Note = this.createEmptyNote();
+  themeSubscription!: Subscription;
+  isDarkMode: boolean = false;
 
   constructor(
+    
     private noteService: NoteService,
     private categoryService: CategoryService, // Injected CategoryService
+    
     private sanitizer: DomSanitizer
+  ,
+    private themeService: ThemeService
   ) {
     this.loadNotes();
-    this.loadCategories(); // Fetch categories when the component initializes
+  }
+  ngOnInit() {
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+    this.loadCategories();
   }
 
+  ngOnDestroy() {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
   loadNotes(): void {
     this.noteService.getNotes().subscribe({
       next: (data) => {
@@ -61,19 +79,24 @@ export class NotesComponent {
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
       next: (categories) => {
+        console.log('Loaded categories:', categories); // Debug log
         this.categories = categories;
       },
-      error: (error) => console.error('Failed to load categories', error),
+      error: (error) => console.error('Failed to load categories:', error)
     });
   }
   getCategoryNameById(category: Category | { id: number } | null): string {
     if (!category) {
       return 'Uncategorized';
     }
+    
+    // If it's a full Category object
     if ('name' in category) {
       return category.name;
     }
-    const categoryData = this.categories.find((cat) => cat.id === category.id);
+    
+    // If it's just an ID reference, look up the category name
+    const categoryData = this.categories.find(cat => cat.id === category.id);
     return categoryData ? categoryData.name : 'Uncategorized';
   }
 
@@ -146,27 +169,49 @@ export class NotesComponent {
   }
 
   saveNote(): void {
-    this.currentNote.color = this.noteColor;
-    this.currentNote.category = this.currentNote.category
-      ? ({ id: this.currentNote.category.id } as Category)
+    console.log('Current note before save:', this.currentNote); // Debug log
+
+    // First ensure we have a valid category ID
+    const categoryId = this.currentNote.category 
+      ? (this.currentNote.category as Category).id 
       : null;
 
+    const noteToSave: Note = {
+      title: this.currentNote.title,
+      description: this.currentNote.description,
+      date: new Date().toISOString().split('T')[0],
+      // Only create the category object if we have a valid ID
+      category: categoryId ? { id: categoryId } : null,
+      color: this.noteColor || '#ffffff'
+    };
+
+    console.log('Note being saved:', noteToSave); // Debug log
+
     if (this.isEditing && this.editNoteId !== null) {
-      this.noteService.updateNote(this.editNoteId, this.currentNote).subscribe({
-        next: () => {
+      this.noteService.updateNote(this.editNoteId, noteToSave).subscribe({
+        next: (response) => {
+          console.log('Update successful:', response);
           this.loadNotes();
           this.closeModal();
         },
-        error: (error) => console.error('Failed to update note', error),
+        error: (error) => {
+          console.error('Failed to update note:', error);
+          console.error('Error details:', error.error);
+        },
       });
     } else {
-      const newNote = { ...this.currentNote, id: undefined };
-      this.noteService.createNote(newNote).subscribe({
-        next: () => {
+      this.noteService.createNote(noteToSave).subscribe({
+        next: (response) => {
+          console.log('Create successful:', response);
           this.loadNotes();
           this.closeModal();
         },
-        error: (error) => console.error('Failed to create note', error),
+        error: (error) => {
+          console.error('Failed to create note:', error);
+          if (error.error) {
+            console.error('Error details:', error.error);
+          }
+        },
       });
     }
   }
@@ -203,12 +248,11 @@ export class NotesComponent {
 
   private createEmptyNote(): Note {
     return {
-      id: 0,
       title: '',
-      category: null,
       description: '',
       date: new Date().toISOString().split('T')[0],
-      color: '#ffffff',
+      category: null,
+      color: '#ffffff'
     };
   }
 

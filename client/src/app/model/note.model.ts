@@ -6,5 +6,5 @@ export interface Note {
   category: Category | { id: number } | null; // Allow both full Category or just id
   description: string; // Detailed description of the note
   date: string;        // Date of the note in ISO format (e.g., YYYY-MM-DD)
-  color: string;      // Background color of the note (e.g., hex color code)
+  color: string;      // Background color of the note (e.g., hex color code
 }

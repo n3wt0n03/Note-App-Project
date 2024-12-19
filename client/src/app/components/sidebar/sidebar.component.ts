@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../services/user.service';
 import { User } from '../../model/user.model';
+import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,13 +13,19 @@ import { User } from '../../model/user.model';
   imports: [RouterModule, CommonModule],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   user: User | null = null;
   userId: number | null = null;
   isExpanded: boolean = false;
   displayName: string;
+  isDarkMode: boolean = false;
+  private themeSubscription!: Subscription;
 
-  constructor(private router: Router, private userService: UserService) {
+  constructor(
+    private router: Router, 
+    private userService: UserService,
+    private themeService: ThemeService
+  ) {
     this.displayName = '';
   }
 
@@ -25,14 +33,24 @@ export class SidebarComponent implements OnInit {
     const userData = localStorage.getItem('user');
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData); // Parse the JSON string
-        this.userId = parsedUser.id; // Extract and assign the user ID
-        this.fetchUserProfile(); // Fetch the user profile
+        const parsedUser = JSON.parse(userData);
+        this.userId = parsedUser.id;
+        this.fetchUserProfile();
       } catch (error) {
         console.error('Failed to parse user data from localStorage:', error);
       }
     } else {
       console.error('No user data found in localStorage');
+    }
+
+    this.themeSubscription = this.themeService.darkMode$.subscribe(
+      isDark => this.isDarkMode = isDark
+    );
+  }
+
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
@@ -55,19 +73,19 @@ export class SidebarComponent implements OnInit {
     this.isExpanded = !this.isExpanded;
   }
 
-  // Checks if a route is active
   isActive(route: string): boolean {
     return this.router.url.includes(route);
   }
 
-  // Expands or collapses sidebar based on hover
   expandSidebar(expand: boolean): void {
     this.isExpanded = expand;
   }
 
-  // Logs out the user
+  toggleDarkMode(): void {
+    this.themeService.toggleDarkMode();
+  }
+
   logout(): void {
-    // Log before removal
     console.log(
       'Before removal:',
       localStorage.getItem('token'),
@@ -75,12 +93,10 @@ export class SidebarComponent implements OnInit {
       sessionStorage.getItem('token')
     );
 
-    // Remove JWT token and user data from localStorage and sessionStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.removeItem('token');
 
-    // Log after removal
     console.log(
       'After removal:',
       localStorage.getItem('token'),
@@ -88,7 +104,6 @@ export class SidebarComponent implements OnInit {
       sessionStorage.getItem('token')
     );
 
-    // Redirect to the login page
     this.router.navigate(['/login']);
   }
 }
