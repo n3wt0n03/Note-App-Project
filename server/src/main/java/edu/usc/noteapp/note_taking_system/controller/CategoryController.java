@@ -1,11 +1,14 @@
 package edu.usc.noteapp.note_taking_system.controller;
 
 import edu.usc.noteapp.note_taking_system.model.Category;
+import edu.usc.noteapp.note_taking_system.model.User;
+import edu.usc.noteapp.note_taking_system.repository.UserRepository;
 import edu.usc.noteapp.note_taking_system.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -14,14 +17,23 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final UserRepository userRepository;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, UserRepository userRepository) {
         this.categoryService = categoryService;
+        this.userRepository = userRepository;
+    }
+
+    private User getAuthenticatedUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategoriesOrdered());
+        User user = getAuthenticatedUser();
+        return ResponseEntity.ok(categoryService.getAllCategoriesOrderedForUser(user));
     }
 
     @GetMapping("/{id}")
@@ -32,13 +44,11 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<?> createCategory(@RequestBody Category category) {
         try {
-            System.out.println("Received category: " + category);
-            return ResponseEntity.ok(categoryService.createCategory(category));
+            User user = getAuthenticatedUser();
+            return ResponseEntity.ok(categoryService.createCategory(category, user));
         } catch (ResponseStatusException e) {
-            // Return error with appropriate status code and message
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            // General exception handler
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
         }
     }

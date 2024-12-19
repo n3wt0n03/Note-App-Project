@@ -2,22 +2,31 @@ package edu.usc.noteapp.note_taking_system.service;
 
 import edu.usc.noteapp.note_taking_system.model.Note;
 import edu.usc.noteapp.note_taking_system.model.Category;
+import edu.usc.noteapp.note_taking_system.model.User;
 import edu.usc.noteapp.note_taking_system.repository.NoteRepository;
 import edu.usc.noteapp.note_taking_system.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 
 @Service
 public class NoteService {
 
     private final NoteRepository noteRepository;
     private final CategoryRepository categoryRepository;
+    private final EntityManager entityManager;
 
-    public NoteService(NoteRepository noteRepository, CategoryRepository categoryRepository) {
+    public NoteService(NoteRepository noteRepository, CategoryRepository categoryRepository,
+            EntityManager entityManager) {
         this.noteRepository = noteRepository;
         this.categoryRepository = categoryRepository;
+        this.entityManager = entityManager;
     }
 
     // Fetch all notes for a specific user
@@ -33,7 +42,7 @@ public class NoteService {
     // Create a new note
     public Note createNote(Note note) {
         if (note.getCategory() == null) {
-            Category uncategorized = getOrCreateUncategorizedCategory();
+            Category uncategorized = getOrCreateUncategorizedCategory(note.getUser());
             note.setCategory(uncategorized);
         } else {
             Category category = validateCategory(note.getCategory().getId());
@@ -47,44 +56,44 @@ public class NoteService {
     }
 
     // Update an existing note
-    // Update an existing note
-    public Note updateNote(Long noteId, Note updatedNote) {
-        return noteRepository.findById(noteId).map(existingNote -> {
-            // Capture the old category ID before updating
-            Long oldCategoryId = existingNote.getCategory() != null ? existingNote.getCategory().getId() : null;
-
-            // Update note details
-            existingNote.setTitle(updatedNote.getTitle());
-            existingNote.setDescription(updatedNote.getDescription());
-            existingNote.setDate(updatedNote.getDate());
-            existingNote.setColor(updatedNote.getColor());
-
-            // Update category or assign to "Uncategorized"
-            if (updatedNote.getCategory() != null) {
-                Category newCategory = categoryRepository.findById(updatedNote.getCategory().getId())
-                        .orElseThrow(() -> new RuntimeException("Category not found with ID: " + updatedNote.getCategory().getId()));
-                existingNote.setCategory(newCategory);
-            } else {
-                Category uncategorized = getOrCreateUncategorizedCategory();
-                existingNote.setCategory(uncategorized);
+    public Note updateNote(Long id, Note updatedNote) {
+        Note existingNote = noteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
+        // Store the old category before updating
+        Category oldCategory = existingNote.getCategory();
+        Category newCategory = updatedNote.getCategory();
+        // Update note fields
+        existingNote.setTitle(updatedNote.getTitle());
+        existingNote.setDescription(updatedNote.getDescription());
+        existingNote.setColor(updatedNote.getColor());
+        existingNote.setDate(updatedNote.getDate());
+        // Handle category change
+        if (newCategory != null) {
+            Category category = categoryRepository.findById(newCategory.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
+            existingNote.setCategory(category);
+            // Increment new category count
+            category.setNotesCount(category.getNotesCount() + 1);
+            categoryRepository.save(category);
+            // Decrement old category count if it exists
+            if (oldCategory != null && !oldCategory.getId().equals(category.getId())) {
+                oldCategory.setNotesCount(oldCategory.getNotesCount() - 1);
+                categoryRepository.save(oldCategory);
             }
-
-            Note savedNote = noteRepository.save(existingNote);
-
-            // Update notes count for the old category, if applicable
-            if (oldCategoryId != null && !oldCategoryId.equals(existingNote.getCategory().getId())) {
-                updateNotesCount(oldCategoryId);
+        } else {
+            Category uncategorized = getOrCreateUncategorizedCategory(existingNote.getUser());
+            existingNote.setCategory(uncategorized);
+            // Increment uncategorized count
+            uncategorized.setNotesCount(uncategorized.getNotesCount() + 1);
+            categoryRepository.save(uncategorized);
+            // Decrement old category count if it exists
+            if (oldCategory != null && !oldCategory.getId().equals(uncategorized.getId())) {
+                oldCategory.setNotesCount(oldCategory.getNotesCount() - 1);
+                categoryRepository.save(oldCategory);
             }
-
-            // Update notes count for the new category
-            if (existingNote.getCategory() != null) {
-                updateNotesCount(existingNote.getCategory().getId());
-            }
-
-            return savedNote;
-        }).orElseThrow(() -> new RuntimeException("Note not found with ID: " + noteId));
+        }
+        return noteRepository.save(existingNote);
     }
-
 
     // Delete a note by ID
     public void deleteNoteById(Long noteId) {
@@ -110,13 +119,15 @@ public class NoteService {
     }
 
     // Get or create the "Uncategorized" category
-    private Category getOrCreateUncategorizedCategory() {
-        return categoryRepository.findByName("Uncategorized")
+    private Category getOrCreateUncategorizedCategory(User user) {
+        return categoryRepository.findByNameAndUser("Uncategorized", user)
                 .orElseGet(() -> {
                     Category uncategorized = new Category();
+                    uncategorized.setUser(user);
                     uncategorized.setName("Uncategorized");
                     uncategorized.setColor("#cccccc");
                     uncategorized.setNotesCount(0);
+                    uncategorized.setOrderIndex(0);
                     return categoryRepository.save(uncategorized);
                 });
     }
