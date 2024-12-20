@@ -21,6 +21,10 @@ public class Category {
     @Column(nullable = false)
     private Integer orderIndex; // Field for category ordering
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     // Getters and Setters
 
     public Long getId() {
@@ -61,5 +65,13 @@ public class Category {
 
     public void setOrderIndex(Integer orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

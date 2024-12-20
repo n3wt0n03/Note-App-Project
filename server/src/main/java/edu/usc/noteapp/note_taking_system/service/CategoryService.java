@@ -2,6 +2,7 @@ package edu.usc.noteapp.note_taking_system.service;
 
 import edu.usc.noteapp.note_taking_system.model.Category;
 import edu.usc.noteapp.note_taking_system.model.Note;
+import edu.usc.noteapp.note_taking_system.model.User;
 import edu.usc.noteapp.note_taking_system.repository.CategoryRepository;
 import edu.usc.noteapp.note_taking_system.repository.NoteRepository;
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,11 @@ public class CategoryService {
     }
 
     public List<Category> getAllCategoriesOrdered() {
-        return categoryRepository.findAllByOrderByOrderIndexAsc();
+        throw new UnsupportedOperationException("Use getAllCategoriesOrderedForUser(User user) instead");
+    }
+
+    public List<Category> getAllCategoriesOrderedForUser(User user) {
+        return categoryRepository.findAllByUserOrderByOrderIndexAsc(user);
     }
 
     public void updateCategoryOrder(Long categoryId, Integer newIndex) {
@@ -41,7 +46,7 @@ public class CategoryService {
         category.setOrderIndex(newIndex);
         categoryRepository.save(category);
 
-        List<Category> categories = categoryRepository.findAllByOrderByOrderIndexAsc();
+        List<Category> categories = categoryRepository.findAllByUserOrderByOrderIndexAsc(category.getUser());
         int currentIndex = 0;
         for (Category cat : categories) {
             if (!cat.getId().equals(categoryId)) {
@@ -64,12 +69,12 @@ public class CategoryService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be empty.");
         }
 
-        Optional<Category> existingCategory = categoryRepository.findByName(category.getName().trim());
+        Optional<Category> existingCategory = categoryRepository.findByNameAndUser(category.getName().trim(), category.getUser());
         if (existingCategory.isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A category with this name already exists.");
         }
 
-        int maxOrderIndex = categoryRepository.findMaxOrderIndex().orElse(0);
+        int maxOrderIndex = categoryRepository.findMaxOrderIndexByUser(category.getUser()).orElse(0);
         category.setOrderIndex(maxOrderIndex + 1);
 
         if (category.getColor() == null || category.getColor().trim().isEmpty()) {
@@ -87,7 +92,7 @@ public class CategoryService {
     public Category updateCategory(Long categoryId, Category category) {
         Category existingCategory = getCategoryById(categoryId);
 
-        Optional<Category> duplicateCategory = categoryRepository.findByName(category.getName().trim());
+        Optional<Category> duplicateCategory = categoryRepository.findByNameAndUser(category.getName().trim(), existingCategory.getUser());
         if (duplicateCategory.isPresent() && !duplicateCategory.get().getId().equals(categoryId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A category with this name already exists.");
         }
@@ -101,13 +106,17 @@ public class CategoryService {
     public void deleteCategory(Long categoryId) {
         Category categoryToDelete = getCategoryById(categoryId);
 
-        // Ensure the "Uncategorized" category exists or create it
-        Category uncategorized = categoryRepository.findByName("Uncategorized")
+        // Get the user from the category to be deleted
+        User user = categoryToDelete.getUser();
+
+        // Find or create Uncategorized for this user
+        Category uncategorized = categoryRepository.findByNameAndUser("Uncategorized", user)
                 .orElseGet(() -> {
                     Category newUncategorized = new Category();
                     newUncategorized.setName("Uncategorized");
-                    newUncategorized.setColor("#FFFFFF"); // Default color
+                    newUncategorized.setColor("#FFFFFF");
                     newUncategorized.setOrderIndex(0);
+                    newUncategorized.setUser(user);
                     return categoryRepository.save(newUncategorized);
                 });
 
@@ -129,7 +138,7 @@ public class CategoryService {
         categoryRepository.deleteById(categoryId);
 
         // Reorder remaining categories
-        List<Category> categories = categoryRepository.findAllByOrderByOrderIndexAsc();
+        List<Category> categories = categoryRepository.findAllByUserOrderByOrderIndexAsc(user);
         for (int i = 0; i < categories.size(); i++) {
             Category category = categories.get(i);
             category.setOrderIndex(i);
@@ -164,5 +173,30 @@ public class CategoryService {
             category.setOrderIndex(i);
             categoryRepository.save(category);
         }
+    }
+
+    public Category createCategory(Category category, User user) {
+        if (category.getId() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New category must not have an ID.");
+        }
+
+        if (category.getName() == null || category.getName().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be empty.");
+        }
+
+        Optional<Category> existingCategory = categoryRepository.findByNameAndUser(category.getName().trim(), category.getUser());
+        if (existingCategory.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A category with this name already exists.");
+        }
+
+        int maxOrderIndex = categoryRepository.findMaxOrderIndexByUser(category.getUser()).orElse(0);
+        category.setOrderIndex(maxOrderIndex + 1);
+        category.setUser(user);
+
+        if (category.getColor() == null || category.getColor().trim().isEmpty()) {
+            category.setColor("#FFFFFF");
+        }
+
+        return categoryRepository.save(category);
     }
 }
